@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import test from "node:test";
+import { resolve } from "node:path";
+import { test } from "vitest";
 
 test("the shared API contract is versioned and covers the baseline resources", async () => {
   const contract = await readFile(
-    new URL("../../docs/openapi.yaml", import.meta.url),
+    resolve(process.cwd(), "../docs/openapi.yaml"),
     "utf8",
   );
 
