@@ -1,28 +1,28 @@
-import { Sparkles } from "lucide-react";
-import Link from "next/link";
 import type { ReactNode } from "react";
 
-/** Shell for authenticated app routes: a slim header and a sign-out control. */
-export default function AppLayout({ children }: { children: ReactNode }) {
+import { AppNavigation } from "@/app/components/product/app-navigation";
+import {
+  requireStudentSession,
+  sessionDisplayName,
+} from "@/app/lib/auth/server-session";
+
+/**
+ * Request-time private shell. Proxy avoids obvious flashes, while this secure
+ * server lookup remains the actual UI gate for every route in the group.
+ */
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  const { user } = await requireStudentSession("/dashboard");
+
   return (
-    <div className="app-shell">
-      <a className="skip-link" href="#app-main">
+    <div className="workspace-shell">
+      <a className="skip-link" href="#workspace-main">
         Skip to main content
       </a>
-      <header className="app-shell__header">
-        <Link aria-label="ScholarMatch home" className="wordmark" href="/">
-          <span className="wordmark__mark" aria-hidden="true">
-            <Sparkles size={16} strokeWidth={2.4} />
-          </span>
-          <span>ScholarMatch</span>
-        </Link>
-        <form action="/auth/signout" method="post">
-          <button className="app-shell__signout" type="submit">
-            Sign out
-          </button>
-        </form>
-      </header>
-      <main className="app-shell__main" id="app-main">
+      <AppNavigation
+        displayName={sessionDisplayName(user)}
+        email={user.email ?? null}
+      />
+      <main className="workspace-main" id="workspace-main">
         {children}
       </main>
     </div>

@@ -8,6 +8,10 @@ import type { components } from "@/app/lib/api/schema";
 
 export type ProfileWrite = components["schemas"]["ProfileWrite"];
 export type ProfileResponse = components["schemas"]["ProfileResponse"];
+export type MatchPage = components["schemas"]["MatchPage"];
+export type MatchResponse = components["schemas"]["MatchResponse"];
+export type ApplicationPage = components["schemas"]["ApplicationPage"];
+export type ApplicationResponse = components["schemas"]["ApplicationResponse"];
 
 /** Resolves the current Supabase access token, or null when signed out. */
 export type AccessTokenProvider = () => Promise<string | null>;
@@ -112,6 +116,39 @@ export class ApiClient {
       signal,
     });
   }
+
+  /** GET /matches — newest server-ranked matches for the current student. */
+  async listMatches(
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<MatchPage> {
+    return this.request<MatchPage>({
+      method: "GET",
+      path: pagePath("/matches", options),
+      signal: options.signal,
+    });
+  }
+
+  /** GET /applications — applications owned by the current student. */
+  async listApplications(
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<ApplicationPage> {
+    return this.request<ApplicationPage>({
+      method: "GET",
+      path: pagePath("/applications", options),
+      signal: options.signal,
+    });
+  }
+}
+
+function pagePath(
+  path: string,
+  options: { limit?: number; cursor?: string },
+): string {
+  const params = new URLSearchParams();
+  if (options.limit !== undefined) params.set("limit", String(options.limit));
+  if (options.cursor) params.set("cursor", options.cursor);
+  const query = params.toString();
+  return query.length > 0 ? `${path}?${query}` : path;
 }
 
 function isNotFound(error: unknown): boolean {

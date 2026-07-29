@@ -4,7 +4,16 @@
  */
 
 /** Paths that require an authenticated session. */
-const PROTECTED_PREFIXES = ["/onboarding", "/dashboard"] as const;
+const PROTECTED_PREFIXES = [
+  "/onboarding",
+  "/dashboard",
+  "/matches",
+  "/scholarships",
+  "/applications",
+  "/documents",
+  "/profile",
+  "/settings",
+] as const;
 
 /**
  * Auth entry pages an already-signed-in user should be bounced away from.
