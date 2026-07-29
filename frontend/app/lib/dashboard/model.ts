@@ -68,8 +68,9 @@ export function buildDashboardViewModel(input: {
       const application = applicationsByScholarship.get(scholarship.id);
       const finished =
         application?.status === "submitted" ||
+        application?.status === "interview" ||
         application?.status === "awarded" ||
-        application?.status === "rejected" ||
+        application?.status === "unsuccessful" ||
         application?.status === "withdrawn";
       if (daysRemaining < 0 || daysRemaining > 30 || finished) return [];
       return [
@@ -213,9 +214,11 @@ function countApplications(
   const counts: Record<ApplicationResponse["status"], number> = {
     saved: 0,
     preparing: 0,
+    ready: 0,
     submitted: 0,
+    interview: 0,
     awarded: 0,
-    rejected: 0,
+    unsuccessful: 0,
     withdrawn: 0,
   };
   for (const application of applications) counts[application.status] += 1;

@@ -67,6 +67,21 @@ paths:
         "422": { $ref: "#/components/responses/ValidationError" }
         "500": { $ref: "#/components/responses/InternalError" }
   /profile/documents:
+    get:
+      operationId: listProfileDocuments
+      tags: [Documents]
+      summary: List private documents owned by the authenticated student.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Private document page. No storage paths or permanent object URLs are returned.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentPage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
     post:
       operationId: uploadProfileDocument
       tags: [Documents]
@@ -102,6 +117,121 @@ paths:
         "413": { $ref: "#/components/responses/PayloadTooLarge" }
         "415": { $ref: "#/components/responses/UnsupportedMediaType" }
         "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /profile/documents/policy:
+    get:
+      operationId: getDocumentUploadPolicy
+      tags: [Documents]
+      summary: Get the authoritative private-document upload policy.
+      responses:
+        "200":
+          description: Current approved types, MIME types, and maximum file size.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentUploadPolicy" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /profile/documents/readiness:
+    get:
+      operationId: getDocumentReadiness
+      tags: [Documents]
+      summary: Map required scholarship documents to private user documents.
+      description: Mapping never shares a file with a scholarship provider.
+      responses:
+        "200":
+          description: Document readiness grouped by tracked application.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentReadinessResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /profile/documents/{document_id}:
+    parameters:
+      - $ref: "#/components/parameters/DocumentId"
+    patch:
+      operationId: renameProfileDocument
+      tags: [Documents]
+      summary: Rename a private document's display name.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DocumentRename" }
+      responses:
+        "200":
+          description: Document renamed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    put:
+      operationId: replaceProfileDocument
+      tags: [Documents]
+      summary: Replace the bytes of a private document while retaining its identity.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "202":
+          description: Replacement accepted for scanning and processing.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "413": { $ref: "#/components/responses/PayloadTooLarge" }
+        "415": { $ref: "#/components/responses/UnsupportedMediaType" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    delete:
+      operationId: deleteProfileDocument
+      tags: [Documents]
+      summary: Permanently delete a private document after explicit confirmation.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "204":
+          {
+            description: Document deleted. Readiness mappings are recalculated.,
+          }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /profile/documents/{document_id}/download-url:
+    post:
+      operationId: createDocumentDownloadUrl
+      tags: [Documents]
+      summary: Create a short-lived signed download URL for one private document.
+      description: Permanent object URLs and storage paths are never returned.
+      parameters:
+        - $ref: "#/components/parameters/DocumentId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "201":
+          description: Short-lived URL created.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SignedDocumentUrlResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
         "429": { $ref: "#/components/responses/RateLimited" }
         "500": { $ref: "#/components/responses/InternalError" }
   /scholarships:
@@ -348,6 +478,22 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "500": { $ref: "#/components/responses/InternalError" }
+  /applications/deadlines:
+    get:
+      operationId: listApplicationDeadlines
+      tags: [Applications]
+      summary: List calendar-friendly deadlines for tracked applications.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Deadline page ordered chronologically with undated items last.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApplicationDeadlinePage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
     post:
       operationId: createApplication
       tags: [Applications]
@@ -382,6 +528,7 @@ paths:
       summary: Update mutable application tracking fields.
       parameters:
         - $ref: "#/components/parameters/ApplicationId"
+        - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
         required: true
         content:
@@ -400,6 +547,72 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /applications/{application_id}/checklist/{checklist_item_id}:
+    put:
+      operationId: updateApplicationChecklistItem
+      tags: [Applications]
+      summary: Set one checklist item's completion state.
+      parameters:
+        - $ref: "#/components/parameters/ApplicationId"
+        - $ref: "#/components/parameters/ChecklistItemId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChecklistItemUpdate" }
+      responses:
+        "200":
+          description: Application with refreshed checklist and readiness.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApplicationResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /applications/{application_id}/reminder:
+    parameters:
+      - $ref: "#/components/parameters/ApplicationId"
+    put:
+      operationId: setApplicationReminder
+      tags: [Applications]
+      summary: Create or replace a private application reminder.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApplicationReminderWrite" }
+      responses:
+        "200":
+          description: Application with updated reminder.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApplicationResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    delete:
+      operationId: deleteApplicationReminder
+      tags: [Applications]
+      summary: Remove an application reminder.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200":
+          description: Application with reminder removed.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApplicationResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
         "500": { $ref: "#/components/responses/InternalError" }
   /admin/ingestion-runs:
     post:
@@ -479,17 +692,35 @@ components:
       name: destination
       in: query
       required: false
-      schema: { type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2 code. }
+      schema:
+        {
+          type: string,
+          minLength: 2,
+          maxLength: 2,
+          description: ISO 3166-1 alpha-2 code.,
+        }
     Nationality:
       name: nationality
       in: query
       required: false
-      schema: { type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2 code used for compatibility filtering. }
+      schema:
+        {
+          type: string,
+          minLength: 2,
+          maxLength: 2,
+          description: ISO 3166-1 alpha-2 code used for compatibility filtering.,
+        }
     Residency:
       name: residency
       in: query
       required: false
-      schema: { type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2 code used for compatibility filtering. }
+      schema:
+        {
+          type: string,
+          minLength: 2,
+          maxLength: 2,
+          description: ISO 3166-1 alpha-2 code used for compatibility filtering.,
+        }
     FundingType:
       name: funding_type
       in: query
@@ -561,6 +792,16 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    DocumentId:
+      name: document_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ChecklistItemId:
+      name: checklist_item_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
     JobId:
       name: job_id
       in: path
@@ -573,38 +814,78 @@ components:
   responses:
     BadRequest:
       description: Malformed request or cursor.
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
     Unauthorized:
       description: Bearer token is missing or invalid.
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
     Forbidden:
       description: Authenticated actor lacks the required role or permission.
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
     NotFound:
       description: Resource was not found or is not visible to the actor.
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
     Conflict:
       description: State, duplicate resource, or idempotency conflict.
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
     PayloadTooLarge:
       description: Uploaded file exceeds the configured limit.
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
     UnsupportedMediaType:
       description: Uploaded file type is not allowed.
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
     ValidationError:
       description: Request fields failed semantic validation.
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
     RateLimited:
       description: Request rate exceeded.
       headers:
         Retry-After:
           description: Seconds until the client should retry.
           schema: { type: integer, minimum: 1 }
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
     InternalError:
       description: Unexpected server error with no sensitive implementation details.
-      content: { application/json: { schema: { $ref: "#/components/schemas/ErrorEnvelope" } } }
+      content:
+        {
+          application/json:
+            { schema: { $ref: "#/components/schemas/ErrorEnvelope" } },
+        }
   schemas:
     ErrorEnvelope:
       type: object
@@ -654,8 +935,15 @@ components:
       required: [full_name, country, study_level, interests]
       properties:
         full_name: { type: string, minLength: 1, maxLength: 200 }
-        country: { type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2 code. }
-        study_level: { type: string, enum: [undergraduate, postgraduate, doctoral, other] }
+        country:
+          {
+            type: string,
+            minLength: 2,
+            maxLength: 2,
+            description: ISO 3166-1 alpha-2 code.,
+          }
+        study_level:
+          { type: string, enum: [undergraduate, postgraduate, doctoral, other] }
         field_of_study: { type: [string, "null"], maxLength: 200 }
         gpa: { type: [number, "null"], minimum: 0, maximum: 4 }
         interests:
@@ -666,12 +954,20 @@ components:
     ProfileResponse:
       type: object
       additionalProperties: false
-      required: [id, full_name, country, study_level, interests, created_at, updated_at]
+      required:
+        [id, full_name, country, study_level, interests, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
         full_name: { type: string, minLength: 1, maxLength: 200 }
-        country: { type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2 code. }
-        study_level: { type: string, enum: [undergraduate, postgraduate, doctoral, other] }
+        country:
+          {
+            type: string,
+            minLength: 2,
+            maxLength: 2,
+            description: ISO 3166-1 alpha-2 code.,
+          }
+        study_level:
+          { type: string, enum: [undergraduate, postgraduate, doctoral, other] }
         field_of_study: { type: [string, "null"], maxLength: 200 }
         gpa: { type: [number, "null"], minimum: 0, maximum: 4 }
         interests:
@@ -679,22 +975,170 @@ components:
           maxItems: 50
           items: { type: string, minLength: 1, maxLength: 100 }
         goals: { type: [string, "null"], maxLength: 4000 }
-        created_at: { type: string, format: date-time, description: UTC ISO-8601 timestamp. }
-        updated_at: { type: string, format: date-time, description: UTC ISO-8601 timestamp. }
+        created_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
+        updated_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
     DocumentType:
       type: string
-      enum: [transcript, cv, recommendation_letter, other]
+      enum:
+        [
+          transcript,
+          cv,
+          recommendation_letter,
+          personal_statement,
+          identity_document,
+          financial_document,
+          other,
+        ]
     DocumentResponse:
       type: object
       additionalProperties: false
-      required: [id, document_type, filename, status, created_at, updated_at]
+      required:
+        [
+          id,
+          document_type,
+          display_name,
+          original_filename,
+          mime_type,
+          size_bytes,
+          status,
+          scan_status,
+          replaced_at,
+          created_at,
+          updated_at,
+        ]
       properties:
         id: { type: string, format: uuid }
         document_type: { $ref: "#/components/schemas/DocumentType" }
-        filename: { type: string }
-        status: { type: string, enum: [pending, processing, ready, rejected, failed] }
-        created_at: { type: string, format: date-time }
-        updated_at: { type: string, format: date-time }
+        display_name: { type: string, minLength: 1, maxLength: 200 }
+        original_filename: { type: string, minLength: 1, maxLength: 255 }
+        mime_type: { type: string }
+        size_bytes: { type: integer, minimum: 1 }
+        status:
+          {
+            type: string,
+            enum: [pending, scanning, processing, ready, rejected, failed],
+          }
+        scan_status: { type: string, enum: [pending, clean, infected, failed] }
+        replaced_at: { type: [string, "null"], format: date-time }
+        created_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
+        updated_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
+    DocumentPage:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/DocumentResponse" },
+          }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+    DocumentUploadPolicy:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          max_size_bytes,
+          allowed_mime_types,
+          allowed_document_types,
+          accepted_extensions,
+        ]
+      properties:
+        max_size_bytes: { type: integer, minimum: 1 }
+        allowed_mime_types:
+          type: array
+          minItems: 1
+          items: { type: string }
+        allowed_document_types:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/DocumentType" }
+        accepted_extensions:
+          type: array
+          minItems: 1
+          items: { type: string, pattern: "^\\.[a-z0-9]+$" }
+    DocumentRename:
+      type: object
+      additionalProperties: false
+      required: [display_name]
+      properties:
+        display_name: { type: string, minLength: 1, maxLength: 200 }
+    SignedDocumentUrlResponse:
+      type: object
+      additionalProperties: false
+      required: [url, expires_at]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: Short-lived signed download URL; never persist or share it.
+        expires_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
+    DocumentReadinessItem:
+      type: object
+      additionalProperties: false
+      required:
+        [required_document, ready, matched_document_ids, shared_externally]
+      properties:
+        required_document: { type: string }
+        ready: { type: boolean }
+        matched_document_ids:
+          type: array
+          items: { type: string, format: uuid }
+        shared_externally:
+          type: boolean
+          const: false
+          description: Readiness mapping never shares private documents externally.
+    ApplicationDocumentReadiness:
+      type: object
+      additionalProperties: false
+      required: [application_id, scholarship_title, items]
+      properties:
+        application_id: { type: string, format: uuid }
+        scholarship_title: { type: string }
+        items:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/DocumentReadinessItem" },
+          }
+    DocumentReadinessResponse:
+      type: object
+      additionalProperties: false
+      required: [applications, updated_at]
+      properties:
+        applications:
+          type: array
+          items: { $ref: "#/components/schemas/ApplicationDocumentReadiness" }
+        updated_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
     ScholarshipStudyLevel:
       type: string
       enum: [undergraduate, postgraduate, doctoral, other]
@@ -725,7 +1169,29 @@ components:
     ScholarshipResponse:
       type: object
       additionalProperties: false
-      required: [id, title, provider, funding_type, study_levels, fields_of_study, destination_countries, nationality_requirements, residency_requirements, requirements, required_documents, source_url, provenance, verified_at, saved, eligibility, deadline, status, created_at, updated_at]
+      required:
+        [
+          id,
+          title,
+          provider,
+          funding_type,
+          study_levels,
+          fields_of_study,
+          destination_countries,
+          nationality_requirements,
+          residency_requirements,
+          requirements,
+          required_documents,
+          source_url,
+          provenance,
+          verified_at,
+          saved,
+          eligibility,
+          deadline,
+          status,
+          created_at,
+          updated_at,
+        ]
       properties:
         id: { type: string, format: uuid }
         title: { type: string }
@@ -735,9 +1201,14 @@ components:
         currency: { type: [string, "null"], minLength: 3, maxLength: 3 }
         funding_type: { $ref: "#/components/schemas/FundingType" }
         funding_summary: { type: [string, "null"] }
-        study_levels: { type: array, items: { $ref: "#/components/schemas/ScholarshipStudyLevel" } }
+        study_levels:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/ScholarshipStudyLevel" },
+          }
         fields_of_study: { type: array, items: { type: string } }
-        destination_countries: { type: array, items: { type: string, minLength: 2, maxLength: 2 } }
+        destination_countries:
+          { type: array, items: { type: string, minLength: 2, maxLength: 2 } }
         nationality_requirements: { type: array, items: { type: string } }
         residency_requirements: { type: array, items: { type: string } }
         deadline: { type: [string, "null"], format: date }
@@ -758,7 +1229,11 @@ components:
       additionalProperties: false
       required: [data, pagination]
       properties:
-        data: { type: array, items: { $ref: "#/components/schemas/ScholarshipResponse" } }
+        data:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/ScholarshipResponse" },
+          }
         pagination: { $ref: "#/components/schemas/Pagination" }
     SavedScholarshipResponse:
       type: object
@@ -775,7 +1250,14 @@ components:
       properties:
         reason:
           type: string
-          enum: [expired, incorrect_deadline, incorrect_eligibility, broken_source, other]
+          enum:
+            [
+              expired,
+              incorrect_deadline,
+              incorrect_eligibility,
+              broken_source,
+              other,
+            ]
         details: { type: [string, "null"], maxLength: 2000 }
     ScholarshipReportResponse:
       type: object
@@ -793,7 +1275,14 @@ components:
       properties:
         name:
           type: string
-          enum: [academics, eligibility_fit, interests_goals, experience, readiness_timing]
+          enum:
+            [
+              academics,
+              eligibility_fit,
+              interests_goals,
+              experience,
+              readiness_timing,
+            ]
         score: { type: number, minimum: 0, maximum: 1 }
         weight: { type: number, minimum: 0, maximum: 1 }
     MissingProfileFact:
@@ -806,7 +1295,13 @@ components:
     MatchExplanation:
       type: object
       additionalProperties: false
-      required: [why_this_matches, what_may_block_you, missing_information, next_actions]
+      required:
+        [
+          why_this_matches,
+          what_may_block_you,
+          missing_information,
+          next_actions,
+        ]
       properties:
         why_this_matches: { type: array, items: { type: string } }
         what_may_block_you: { type: array, items: { type: string } }
@@ -823,12 +1318,34 @@ components:
         detail: { type: string }
         basis:
           type: string
-          enum: [verified_requirement, inferred_relevance, profile_unknown, requirement_not_met]
+          enum:
+            [
+              verified_requirement,
+              inferred_relevance,
+              profile_unknown,
+              requirement_not_met,
+            ]
         source_url: { type: [string, "null"], format: uri }
     MatchResponse:
       type: object
       additionalProperties: false
-      required: [id, rank, scholarship, score, confidence, score_components, requirement_evidence, deterministic_explanation, ai_explanation, explanation_status, algorithm_version, calculation_status, stale_reasons, calculated_at]
+      required:
+        [
+          id,
+          rank,
+          scholarship,
+          score,
+          confidence,
+          score_components,
+          requirement_evidence,
+          deterministic_explanation,
+          ai_explanation,
+          explanation_status,
+          algorithm_version,
+          calculation_status,
+          stale_reasons,
+          calculated_at,
+        ]
       properties:
         id: { type: string, format: uuid }
         rank: { type: integer, minimum: 1 }
@@ -843,18 +1360,24 @@ components:
           minimum: 0
           maximum: 1
           description: Confidence in the score inputs based on profile and requirement completeness; never a probability of winning.
-        score_components: { type: array, items: { $ref: "#/components/schemas/ScoreComponent" } }
+        score_components:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/ScoreComponent" },
+          }
         requirement_evidence:
           type: array
           items: { $ref: "#/components/schemas/RequirementEvidence" }
-        deterministic_explanation: { $ref: "#/components/schemas/MatchExplanation" }
+        deterministic_explanation:
+          { $ref: "#/components/schemas/MatchExplanation" }
         ai_explanation:
           oneOf:
             - $ref: "#/components/schemas/MatchExplanation"
             - type: "null"
         reasons: { type: array, items: { type: string } }
         gaps: { type: array, items: { type: string } }
-        explanation_status: { type: string, enum: [pending, ready, unavailable] }
+        explanation_status:
+          { type: string, enum: [pending, ready, unavailable] }
         algorithm_version: { type: string }
         calculation_status: { type: string, enum: [current, stale] }
         stale_reasons: { type: array, items: { type: string } }
@@ -864,11 +1387,22 @@ components:
       additionalProperties: false
       required: [data, pagination]
       properties:
-        data: { type: array, items: { $ref: "#/components/schemas/MatchResponse" } }
+        data:
+          { type: array, items: { $ref: "#/components/schemas/MatchResponse" } }
         pagination: { $ref: "#/components/schemas/Pagination" }
     ApplicationStatus:
       type: string
-      enum: [saved, preparing, submitted, awarded, rejected, withdrawn]
+      enum:
+        [
+          saved,
+          preparing,
+          ready,
+          submitted,
+          interview,
+          awarded,
+          unsuccessful,
+          withdrawn,
+        ]
     ApplicationCreate:
       type: object
       additionalProperties: false
@@ -884,25 +1418,198 @@ components:
       properties:
         status: { $ref: "#/components/schemas/ApplicationStatus" }
         notes: { type: [string, "null"], maxLength: 10000 }
-        submitted_at: { type: [string, "null"], format: date-time }
+    ChecklistItemUpdate:
+      type: object
+      additionalProperties: false
+      required: [completed]
+      properties:
+        completed: { type: boolean }
+    ApplicationChecklistItem:
+      type: object
+      additionalProperties: false
+      required: [id, label, required, completed, updated_at]
+      properties:
+        id: { type: string, format: uuid }
+        label: { type: string }
+        required: { type: boolean }
+        completed: { type: boolean }
+        updated_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
+    ApplicationReminderWrite:
+      type: object
+      additionalProperties: false
+      required: [remind_at, timezone]
+      properties:
+        remind_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
+        timezone:
+          {
+            type: string,
+            description: IANA timezone used when the reminder was entered.,
+          }
+    ApplicationReminder:
+      allOf:
+        - $ref: "#/components/schemas/ApplicationReminderWrite"
+        - type: object
+          additionalProperties: false
+          required: [created_at, updated_at]
+          properties:
+            created_at:
+              {
+                type: string,
+                format: date-time,
+                description: UTC ISO-8601 timestamp.,
+              }
+            updated_at:
+              {
+                type: string,
+                format: date-time,
+                description: UTC ISO-8601 timestamp.,
+              }
+    ApplicationStatusHistoryItem:
+      type: object
+      additionalProperties: false
+      required: [id, from_status, to_status, changed_at]
+      description: Append-only audit record; status-history mutations are not exposed.
+      properties:
+        id: { type: string, format: uuid }
+        from_status:
+          oneOf:
+            - $ref: "#/components/schemas/ApplicationStatus"
+            - type: "null"
+        to_status: { $ref: "#/components/schemas/ApplicationStatus" }
+        changed_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
     ApplicationResponse:
       type: object
       additionalProperties: false
-      required: [id, scholarship_id, status, notes, submitted_at, created_at, updated_at]
+      required:
+        [
+          id,
+          scholarship_id,
+          scholarship,
+          status,
+          allowed_transitions,
+          checklist,
+          document_readiness,
+          status_history,
+          reminder,
+          notes,
+          deadline_at,
+          deadline_timezone,
+          submitted_at,
+          created_at,
+          updated_at,
+        ]
       properties:
         id: { type: string, format: uuid }
         scholarship_id: { type: string, format: uuid }
+        scholarship: { $ref: "#/components/schemas/ScholarshipResponse" }
         status: { $ref: "#/components/schemas/ApplicationStatus" }
+        allowed_transitions:
+          type: array
+          description: Server-authoritative next states for this application.
+          items: { $ref: "#/components/schemas/ApplicationStatus" }
+        checklist:
+          type: array
+          items: { $ref: "#/components/schemas/ApplicationChecklistItem" }
+        document_readiness:
+          type: array
+          items: { $ref: "#/components/schemas/DocumentReadinessItem" }
+        status_history:
+          type: array
+          items: { $ref: "#/components/schemas/ApplicationStatusHistoryItem" }
+        reminder:
+          oneOf:
+            - $ref: "#/components/schemas/ApplicationReminder"
+            - type: "null"
         notes: { type: [string, "null"] }
+        deadline_at:
+          {
+            type: [string, "null"],
+            format: date-time,
+            description: UTC ISO-8601 timestamp when a precise deadline is known.,
+          }
+        deadline_timezone:
+          {
+            type: [string, "null"],
+            description: Provider-published IANA timezone when known.,
+          }
         submitted_at: { type: [string, "null"], format: date-time }
-        created_at: { type: string, format: date-time }
-        updated_at: { type: string, format: date-time }
+        created_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
+        updated_at:
+          {
+            type: string,
+            format: date-time,
+            description: UTC ISO-8601 timestamp.,
+          }
     ApplicationPage:
       type: object
       additionalProperties: false
       required: [data, pagination]
       properties:
-        data: { type: array, items: { $ref: "#/components/schemas/ApplicationResponse" } }
+        data:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/ApplicationResponse" },
+          }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+    ApplicationDeadline:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          application_id,
+          scholarship_id,
+          title,
+          provider,
+          status,
+          deadline_date,
+          deadline_at,
+          source_timezone,
+          source_url,
+        ]
+      properties:
+        application_id: { type: string, format: uuid }
+        scholarship_id: { type: string, format: uuid }
+        title: { type: string }
+        provider: { type: string }
+        status: { $ref: "#/components/schemas/ApplicationStatus" }
+        deadline_date: { type: [string, "null"], format: date }
+        deadline_at: { type: [string, "null"], format: date-time }
+        source_timezone:
+          {
+            type: [string, "null"],
+            description: Provider-published IANA timezone when known.,
+          }
+        source_url: { type: string, format: uri }
+    ApplicationDeadlinePage:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data:
+          {
+            type: array,
+            items: { $ref: "#/components/schemas/ApplicationDeadline" },
+          }
         pagination: { $ref: "#/components/schemas/Pagination" }
     JobResponse:
       type: object
@@ -924,7 +1631,8 @@ components:
         useful: { type: boolean }
         reason:
           type: string
-          enum: [accurate, unclear, missing_context, incorrect, not_relevant, other]
+          enum:
+            [accurate, unclear, missing_context, incorrect, not_relevant, other]
         details: { type: [string, "null"], maxLength: 2000 }
     MatchFeedbackResponse:
       type: object
@@ -950,7 +1658,11 @@ components:
       properties:
         id: { type: string, format: uuid }
         source: { type: string }
-        status: { type: string, enum: [queued, running, completed, failed, cancelled] }
+        status:
+          {
+            type: string,
+            enum: [queued, running, completed, failed, cancelled],
+          }
         counters:
           type: object
           additionalProperties: false

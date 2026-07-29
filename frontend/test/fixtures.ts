@@ -115,8 +115,38 @@ export const matchFixture: MatchResponse = {
 export const applicationFixture: ApplicationResponse = {
   id: "7ec21747-c7c2-457c-ab38-0a2513f74911",
   scholarship_id: matchFixture.scholarship.id,
+  scholarship: matchFixture.scholarship,
   status: "preparing",
+  allowed_transitions: ["saved", "ready", "withdrawn"],
+  checklist: [
+    {
+      id: "38ed579d-1065-40cd-8ab6-c160ff9c0a04",
+      label: "Review eligibility requirements",
+      required: true,
+      completed: false,
+      updated_at: "2026-07-26T09:00:00Z",
+    },
+  ],
+  document_readiness: [
+    {
+      required_document: "Academic transcript",
+      ready: false,
+      matched_document_ids: [],
+      shared_externally: false,
+    },
+  ],
+  status_history: [
+    {
+      id: "74791bd0-f43d-4e08-b16d-954b5cf63df7",
+      from_status: "saved",
+      to_status: "preparing",
+      changed_at: "2026-07-18T08:00:00Z",
+    },
+  ],
+  reminder: null,
   notes: null,
+  deadline_at: null,
+  deadline_timezone: null,
   submitted_at: null,
   created_at: "2026-07-18T08:00:00Z",
   updated_at: "2026-07-26T09:00:00Z",

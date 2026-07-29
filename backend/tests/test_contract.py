@@ -21,6 +21,10 @@ def test_required_resource_paths_are_declared() -> None:
     assert {
         "/profile",
         "/profile/documents",
+        "/profile/documents/policy",
+        "/profile/documents/readiness",
+        "/profile/documents/{document_id}",
+        "/profile/documents/{document_id}/download-url",
         "/scholarships",
         "/scholarships/{scholarship_id}",
         "/scholarships/{scholarship_id}/related",
@@ -31,7 +35,10 @@ def test_required_resource_paths_are_declared() -> None:
         "/matches/recalculation-jobs/{job_id}",
         "/matches/{scholarship_id}/feedback",
         "/applications",
+        "/applications/deadlines",
         "/applications/{application_id}",
+        "/applications/{application_id}/checklist/{checklist_item_id}",
+        "/applications/{application_id}/reminder",
         "/admin/ingestion-runs",
         "/admin/ingestion-runs/{run_id}",
     } <= paths.keys()

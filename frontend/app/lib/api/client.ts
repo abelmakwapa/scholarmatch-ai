@@ -17,6 +17,22 @@ export type MatchFeedbackResponse =
   components["schemas"]["MatchFeedbackResponse"];
 export type ApplicationPage = components["schemas"]["ApplicationPage"];
 export type ApplicationResponse = components["schemas"]["ApplicationResponse"];
+export type ApplicationStatus = components["schemas"]["ApplicationStatus"];
+export type ApplicationUpdate = components["schemas"]["ApplicationUpdate"];
+export type ApplicationDeadlinePage =
+  components["schemas"]["ApplicationDeadlinePage"];
+export type ChecklistItemUpdate = components["schemas"]["ChecklistItemUpdate"];
+export type ApplicationReminderWrite =
+  components["schemas"]["ApplicationReminderWrite"];
+export type DocumentPage = components["schemas"]["DocumentPage"];
+export type DocumentResponse = components["schemas"]["DocumentResponse"];
+export type DocumentUploadPolicy =
+  components["schemas"]["DocumentUploadPolicy"];
+export type DocumentReadinessResponse =
+  components["schemas"]["DocumentReadinessResponse"];
+export type DocumentRename = components["schemas"]["DocumentRename"];
+export type SignedDocumentUrlResponse =
+  components["schemas"]["SignedDocumentUrlResponse"];
 export type ScholarshipPage = components["schemas"]["ScholarshipPage"];
 export type ScholarshipResponse = components["schemas"]["ScholarshipResponse"];
 export type EligibilityStatus = components["schemas"]["EligibilityStatus"];
@@ -200,6 +216,146 @@ export class ApiClient {
       method: "GET",
       path: pagePath("/applications", options),
       signal: options.signal,
+    });
+  }
+
+  async listApplicationDeadlines(
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<ApplicationDeadlinePage> {
+    return this.request<ApplicationDeadlinePage>({
+      method: "GET",
+      path: pagePath("/applications/deadlines", options),
+      signal: options.signal,
+    });
+  }
+
+  async updateApplication(
+    applicationId: string,
+    body: ApplicationUpdate,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<ApplicationResponse> {
+    return this.request<ApplicationResponse>({
+      method: "PATCH",
+      path: `/applications/${encodeURIComponent(applicationId)}`,
+      body,
+      idempotencyKey,
+      signal,
+    });
+  }
+
+  async updateApplicationChecklistItem(
+    applicationId: string,
+    checklistItemId: string,
+    body: ChecklistItemUpdate,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<ApplicationResponse> {
+    return this.request<ApplicationResponse>({
+      method: "PUT",
+      path: `/applications/${encodeURIComponent(applicationId)}/checklist/${encodeURIComponent(checklistItemId)}`,
+      body,
+      idempotencyKey,
+      signal,
+    });
+  }
+
+  async setApplicationReminder(
+    applicationId: string,
+    body: ApplicationReminderWrite,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<ApplicationResponse> {
+    return this.request<ApplicationResponse>({
+      method: "PUT",
+      path: `/applications/${encodeURIComponent(applicationId)}/reminder`,
+      body,
+      idempotencyKey,
+      signal,
+    });
+  }
+
+  async deleteApplicationReminder(
+    applicationId: string,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<ApplicationResponse> {
+    return this.request<ApplicationResponse>({
+      method: "DELETE",
+      path: `/applications/${encodeURIComponent(applicationId)}/reminder`,
+      idempotencyKey,
+      signal,
+    });
+  }
+
+  async listDocuments(
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<DocumentPage> {
+    return this.request<DocumentPage>({
+      method: "GET",
+      path: pagePath("/profile/documents", options),
+      signal: options.signal,
+    });
+  }
+
+  async getDocumentUploadPolicy(
+    signal?: AbortSignal,
+  ): Promise<DocumentUploadPolicy> {
+    return this.request<DocumentUploadPolicy>({
+      method: "GET",
+      path: "/profile/documents/policy",
+      signal,
+    });
+  }
+
+  async getDocumentReadiness(
+    signal?: AbortSignal,
+  ): Promise<DocumentReadinessResponse> {
+    return this.request<DocumentReadinessResponse>({
+      method: "GET",
+      path: "/profile/documents/readiness",
+      signal,
+    });
+  }
+
+  async renameDocument(
+    documentId: string,
+    body: DocumentRename,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<DocumentResponse> {
+    return this.request<DocumentResponse>({
+      method: "PATCH",
+      path: `/profile/documents/${encodeURIComponent(documentId)}`,
+      body,
+      idempotencyKey,
+      signal,
+    });
+  }
+
+  async createDocumentDownloadUrl(
+    documentId: string,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<SignedDocumentUrlResponse> {
+    return this.request<SignedDocumentUrlResponse>({
+      method: "POST",
+      path: `/profile/documents/${encodeURIComponent(documentId)}/download-url`,
+      idempotencyKey,
+      signal,
+    });
+  }
+
+  async deleteDocument(
+    documentId: string,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<null> {
+    return this.request<null>({
+      method: "DELETE",
+      path: `/profile/documents/${encodeURIComponent(documentId)}`,
+      idempotencyKey,
+      signal,
     });
   }
 

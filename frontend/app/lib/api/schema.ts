@@ -29,10 +29,89 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List private documents owned by the authenticated student. */
+        get: operations["listProfileDocuments"];
         put?: never;
         /** Upload a private profile document for asynchronous processing. */
         post: operations["uploadProfileDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile/documents/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the authoritative private-document upload policy. */
+        get: operations["getDocumentUploadPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile/documents/readiness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Map required scholarship documents to private user documents.
+         * @description Mapping never shares a file with a scholarship provider.
+         */
+        get: operations["getDocumentReadiness"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile/documents/{document_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                document_id: components["parameters"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Replace the bytes of a private document while retaining its identity. */
+        put: operations["replaceProfileDocument"];
+        post?: never;
+        /** Permanently delete a private document after explicit confirmation. */
+        delete: operations["deleteProfileDocument"];
+        options?: never;
+        head?: never;
+        /** Rename a private document's display name. */
+        patch: operations["renameProfileDocument"];
+        trace?: never;
+    };
+    "/profile/documents/{document_id}/download-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a short-lived signed download URL for one private document.
+         * @description Permanent object URLs and storage paths are never returned.
+         */
+        post: operations["createDocumentDownloadUrl"];
         delete?: never;
         options?: never;
         head?: never;
@@ -231,6 +310,23 @@ export interface paths {
         /** List applications owned by the authenticated student. */
         get: operations["listApplications"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/deadlines": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List calendar-friendly deadlines for tracked applications. */
+        get: operations["listApplicationDeadlines"];
+        put?: never;
         /** Start tracking an application. */
         post: operations["createApplication"];
         delete?: never;
@@ -254,6 +350,43 @@ export interface paths {
         head?: never;
         /** Update mutable application tracking fields. */
         patch: operations["updateApplication"];
+        trace?: never;
+    };
+    "/applications/{application_id}/checklist/{checklist_item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set one checklist item's completion state. */
+        put: operations["updateApplicationChecklistItem"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{application_id}/reminder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Create or replace a private application reminder. */
+        put: operations["setApplicationReminder"];
+        post?: never;
+        /** Remove an application reminder. */
+        delete: operations["deleteApplicationReminder"];
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/admin/ingestion-runs": {
@@ -360,17 +493,79 @@ export interface components {
             updated_at: string;
         };
         /** @enum {string} */
-        DocumentType: "transcript" | "cv" | "recommendation_letter" | "other";
+        DocumentType: "transcript" | "cv" | "recommendation_letter" | "personal_statement" | "identity_document" | "financial_document" | "other";
         DocumentResponse: {
             /** Format: uuid */
             id: string;
             document_type: components["schemas"]["DocumentType"];
-            filename: string;
+            display_name: string;
+            original_filename: string;
+            mime_type: string;
+            size_bytes: number;
             /** @enum {string} */
-            status: "pending" | "processing" | "ready" | "rejected" | "failed";
+            status: "pending" | "scanning" | "processing" | "ready" | "rejected" | "failed";
+            /** @enum {string} */
+            scan_status: "pending" | "clean" | "infected" | "failed";
             /** Format: date-time */
+            replaced_at: string | null;
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
             created_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
+            updated_at: string;
+        };
+        DocumentPage: {
+            data: components["schemas"]["DocumentResponse"][];
+            pagination: components["schemas"]["Pagination"];
+        };
+        DocumentUploadPolicy: {
+            max_size_bytes: number;
+            allowed_mime_types: string[];
+            allowed_document_types: components["schemas"]["DocumentType"][];
+            accepted_extensions: string[];
+        };
+        DocumentRename: {
+            display_name: string;
+        };
+        SignedDocumentUrlResponse: {
+            /**
+             * Format: uri
+             * @description Short-lived signed download URL; never persist or share it.
+             */
+            url: string;
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
+            expires_at: string;
+        };
+        DocumentReadinessItem: {
+            required_document: string;
+            ready: boolean;
+            matched_document_ids: string[];
+            /**
+             * @description Readiness mapping never shares private documents externally.
+             * @constant
+             */
+            shared_externally: false;
+        };
+        ApplicationDocumentReadiness: {
+            /** Format: uuid */
+            application_id: string;
+            scholarship_title: string;
+            items: components["schemas"]["DocumentReadinessItem"][];
+        };
+        DocumentReadinessResponse: {
+            applications: components["schemas"]["ApplicationDocumentReadiness"][];
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
             updated_at: string;
         };
         /** @enum {string} */
@@ -509,7 +704,7 @@ export interface components {
             pagination: components["schemas"]["Pagination"];
         };
         /** @enum {string} */
-        ApplicationStatus: "saved" | "preparing" | "submitted" | "awarded" | "rejected" | "withdrawn";
+        ApplicationStatus: "saved" | "preparing" | "ready" | "submitted" | "interview" | "awarded" | "unsuccessful" | "withdrawn";
         ApplicationCreate: {
             /** Format: uuid */
             scholarship_id: string;
@@ -519,25 +714,112 @@ export interface components {
         ApplicationUpdate: {
             status?: components["schemas"]["ApplicationStatus"];
             notes?: string | null;
-            /** Format: date-time */
-            submitted_at?: string | null;
+        };
+        ChecklistItemUpdate: {
+            completed: boolean;
+        };
+        ApplicationChecklistItem: {
+            /** Format: uuid */
+            id: string;
+            label: string;
+            required: boolean;
+            completed: boolean;
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
+            updated_at: string;
+        };
+        ApplicationReminderWrite: {
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
+            remind_at: string;
+            /** @description IANA timezone used when the reminder was entered. */
+            timezone: string;
+        };
+        ApplicationReminder: components["schemas"]["ApplicationReminderWrite"] & {
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
+            updated_at: string;
+        };
+        /** @description Append-only audit record; status-history mutations are not exposed. */
+        ApplicationStatusHistoryItem: {
+            /** Format: uuid */
+            id: string;
+            from_status: components["schemas"]["ApplicationStatus"] | null;
+            to_status: components["schemas"]["ApplicationStatus"];
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
+            changed_at: string;
         };
         ApplicationResponse: {
             /** Format: uuid */
             id: string;
             /** Format: uuid */
             scholarship_id: string;
+            scholarship: components["schemas"]["ScholarshipResponse"];
             status: components["schemas"]["ApplicationStatus"];
+            /** @description Server-authoritative next states for this application. */
+            allowed_transitions: components["schemas"]["ApplicationStatus"][];
+            checklist: components["schemas"]["ApplicationChecklistItem"][];
+            document_readiness: components["schemas"]["DocumentReadinessItem"][];
+            status_history: components["schemas"]["ApplicationStatusHistoryItem"][];
+            reminder: components["schemas"]["ApplicationReminder"] | null;
             notes: string | null;
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp when a precise deadline is known.
+             */
+            deadline_at: string | null;
+            /** @description Provider-published IANA timezone when known. */
+            deadline_timezone: string | null;
             /** Format: date-time */
             submitted_at: string | null;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
             created_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description UTC ISO-8601 timestamp.
+             */
             updated_at: string;
         };
         ApplicationPage: {
             data: components["schemas"]["ApplicationResponse"][];
+            pagination: components["schemas"]["Pagination"];
+        };
+        ApplicationDeadline: {
+            /** Format: uuid */
+            application_id: string;
+            /** Format: uuid */
+            scholarship_id: string;
+            title: string;
+            provider: string;
+            status: components["schemas"]["ApplicationStatus"];
+            /** Format: date */
+            deadline_date: string | null;
+            /** Format: date-time */
+            deadline_at: string | null;
+            /** @description Provider-published IANA timezone when known. */
+            source_timezone: string | null;
+            /** Format: uri */
+            source_url: string;
+        };
+        ApplicationDeadlinePage: {
+            data: components["schemas"]["ApplicationDeadline"][];
             pagination: components["schemas"]["Pagination"];
         };
         JobResponse: {
@@ -714,6 +996,8 @@ export interface components {
         ScholarshipId: string;
         ApplicationId: string;
         RunId: string;
+        DocumentId: string;
+        ChecklistItemId: string;
         JobId: string;
     };
     requestBodies: never;
@@ -776,6 +1060,32 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    listProfileDocuments: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private document page. No storage paths or permanent object URLs are returned. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     uploadProfileDocument: {
         parameters: {
             query?: never;
@@ -812,6 +1122,180 @@ export interface operations {
             413: components["responses"]["PayloadTooLarge"];
             415: components["responses"]["UnsupportedMediaType"];
             422: components["responses"]["ValidationError"];
+            429: components["responses"]["RateLimited"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    getDocumentUploadPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current approved types, MIME types, and maximum file size. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentUploadPolicy"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    getDocumentReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document readiness grouped by tracked application. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentReadinessResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    replaceProfileDocument: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                document_id: components["parameters"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Replacement accepted for scanning and processing. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            413: components["responses"]["PayloadTooLarge"];
+            415: components["responses"]["UnsupportedMediaType"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    deleteProfileDocument: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                document_id: components["parameters"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Document deleted. Readiness mappings are recalculated. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    renameProfileDocument: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                document_id: components["parameters"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentRename"];
+            };
+        };
+        responses: {
+            /** @description Document renamed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    createDocumentDownloadUrl: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                document_id: components["parameters"]["DocumentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Short-lived URL created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SignedDocumentUrlResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             429: components["responses"]["RateLimited"];
             500: components["responses"]["InternalError"];
         };
@@ -1163,6 +1647,32 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    listApplicationDeadlines: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deadline page ordered chronologically with undated items last. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationDeadlinePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     createApplication: {
         parameters: {
             query?: never;
@@ -1199,7 +1709,10 @@ export interface operations {
     updateApplication: {
         parameters: {
             query?: never;
-            header?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
             path: {
                 application_id: components["parameters"]["ApplicationId"];
             };
@@ -1225,6 +1738,104 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    updateApplicationChecklistItem: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                application_id: components["parameters"]["ApplicationId"];
+                checklist_item_id: components["parameters"]["ChecklistItemId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistItemUpdate"];
+            };
+        };
+        responses: {
+            /** @description Application with refreshed checklist and readiness. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    setApplicationReminder: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplicationReminderWrite"];
+            };
+        };
+        responses: {
+            /** @description Application with updated reminder. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    deleteApplicationReminder: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                application_id: components["parameters"]["ApplicationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Application with reminder removed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
             500: components["responses"]["InternalError"];
         };
     };
