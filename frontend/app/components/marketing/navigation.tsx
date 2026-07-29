@@ -41,7 +41,7 @@ export function Navigation() {
           <a className="site-nav__signin" href="/sign-in">
             Sign in
           </a>
-          <a className="site-nav__cta" href="#start">
+          <a className="site-nav__cta" href="/sign-up">
             Find scholarships
           </a>
           <button
@@ -77,7 +77,7 @@ export function Navigation() {
         </a>
         <a
           className="mobile-navigation__cta"
-          href="#start"
+          href="/sign-up"
           onClick={() => setOpen(false)}
         >
           Find scholarships

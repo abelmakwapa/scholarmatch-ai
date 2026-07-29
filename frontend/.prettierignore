@@ -3,3 +3,4 @@ node_modules/
 public/
 next-env.d.ts
 AGENTS.md
+app/lib/api/schema.ts
