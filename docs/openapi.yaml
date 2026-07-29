@@ -109,7 +109,23 @@ paths:
       operationId: listScholarships
       tags: [Scholarships]
       summary: List published scholarships.
+      description: |
+        Searches title, provider, field of study, and the normalized description.
+        Results include the authenticated student's saved state and current
+        eligibility assessment. Funding-amount sorting only compares records
+        whose amount and currency are directly comparable.
       parameters:
+        - $ref: "#/components/parameters/ScholarshipQuery"
+        - $ref: "#/components/parameters/StudyLevel"
+        - $ref: "#/components/parameters/Field"
+        - $ref: "#/components/parameters/Destination"
+        - $ref: "#/components/parameters/Nationality"
+        - $ref: "#/components/parameters/Residency"
+        - $ref: "#/components/parameters/FundingType"
+        - $ref: "#/components/parameters/DeadlineFrom"
+        - $ref: "#/components/parameters/DeadlineTo"
+        - $ref: "#/components/parameters/Verified"
+        - $ref: "#/components/parameters/ScholarshipSort"
         - $ref: "#/components/parameters/Cursor"
         - $ref: "#/components/parameters/Limit"
       responses:
@@ -138,6 +154,79 @@ paths:
                 $ref: "#/components/schemas/ScholarshipResponse"
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /scholarships/{scholarship_id}/related:
+    get:
+      operationId: listRelatedScholarships
+      tags: [Scholarships]
+      summary: List related published scholarships from the current catalogue.
+      parameters:
+        - $ref: "#/components/parameters/ScholarshipId"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Related scholarship page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScholarshipPage"
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /scholarships/{scholarship_id}/saved:
+    parameters:
+      - $ref: "#/components/parameters/ScholarshipId"
+    put:
+      operationId: saveScholarship
+      tags: [Scholarships]
+      summary: Save a scholarship for the authenticated student.
+      responses:
+        "200":
+          description: Scholarship saved.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavedScholarshipResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    delete:
+      operationId: unsaveScholarship
+      tags: [Scholarships]
+      summary: Remove a scholarship from the authenticated student's saved list.
+      responses:
+        "204": { description: Scholarship removed from saved list. }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /scholarships/{scholarship_id}/reports:
+    post:
+      operationId: reportScholarship
+      tags: [Scholarships]
+      summary: Report potentially inaccurate scholarship information.
+      parameters:
+        - $ref: "#/components/parameters/ScholarshipId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ScholarshipReportCreate" }
+      responses:
+        "201":
+          description: Report received.
+          headers:
+            Idempotency-Replayed:
+              $ref: "#/components/headers/IdempotencyReplayed"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ScholarshipReportResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
         "500": { $ref: "#/components/responses/InternalError" }
   /matches:
     get:
@@ -324,6 +413,65 @@ components:
       bearerFormat: JWT
       description: Supabase access token; the API verifies signature, issuer, audience, expiry, and subject.
   parameters:
+    ScholarshipQuery:
+      name: q
+      in: query
+      required: false
+      description: Searches title, provider, field, and normalized description.
+      schema: { type: string, minLength: 1, maxLength: 200 }
+    StudyLevel:
+      name: study_level
+      in: query
+      required: false
+      schema: { $ref: "#/components/schemas/ScholarshipStudyLevel" }
+    Field:
+      name: field
+      in: query
+      required: false
+      schema: { type: string, minLength: 1, maxLength: 100 }
+    Destination:
+      name: destination
+      in: query
+      required: false
+      schema: { type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2 code. }
+    Nationality:
+      name: nationality
+      in: query
+      required: false
+      schema: { type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2 code used for compatibility filtering. }
+    Residency:
+      name: residency
+      in: query
+      required: false
+      schema: { type: string, minLength: 2, maxLength: 2, description: ISO 3166-1 alpha-2 code used for compatibility filtering. }
+    FundingType:
+      name: funding_type
+      in: query
+      required: false
+      schema: { $ref: "#/components/schemas/FundingType" }
+    DeadlineFrom:
+      name: deadline_from
+      in: query
+      required: false
+      schema: { type: string, format: date }
+    DeadlineTo:
+      name: deadline_to
+      in: query
+      required: false
+      schema: { type: string, format: date }
+    Verified:
+      name: verified
+      in: query
+      required: false
+      schema: { type: boolean }
+    ScholarshipSort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [relevance, deadline, recently_verified, funding_amount]
+        default: relevance
     Cursor:
       name: cursor
       in: query
@@ -496,10 +644,37 @@ components:
         status: { type: string, enum: [pending, processing, ready, rejected, failed] }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
+    ScholarshipStudyLevel:
+      type: string
+      enum: [undergraduate, postgraduate, doctoral, other]
+    FundingType:
+      type: string
+      enum: [full, partial, tuition, stipend, research, other]
+    EligibilityStatus:
+      type: string
+      enum: [eligible, potentially_eligible, ineligible, unknown]
+    EligibilityAssessment:
+      type: object
+      additionalProperties: false
+      required: [status, summary, reasons, missing_facts]
+      properties:
+        status: { $ref: "#/components/schemas/EligibilityStatus" }
+        summary: { type: string }
+        reasons: { type: array, items: { type: string } }
+        missing_facts: { type: array, items: { type: string } }
+    ScholarshipProvenance:
+      type: object
+      additionalProperties: false
+      required: [source_name, source_url, ingested_at, last_checked_at]
+      properties:
+        source_name: { type: string }
+        source_url: { type: string, format: uri }
+        ingested_at: { type: string, format: date-time }
+        last_checked_at: { type: string, format: date-time }
     ScholarshipResponse:
       type: object
       additionalProperties: false
-      required: [id, title, provider, deadline, status, created_at, updated_at]
+      required: [id, title, provider, funding_type, study_levels, fields_of_study, destination_countries, nationality_requirements, residency_requirements, requirements, required_documents, source_url, provenance, verified_at, saved, eligibility, deadline, status, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
         title: { type: string }
@@ -507,9 +682,23 @@ components:
         description: { type: [string, "null"] }
         amount: { type: [number, "null"], minimum: 0 }
         currency: { type: [string, "null"], minLength: 3, maxLength: 3 }
+        funding_type: { $ref: "#/components/schemas/FundingType" }
+        funding_summary: { type: [string, "null"] }
+        study_levels: { type: array, items: { $ref: "#/components/schemas/ScholarshipStudyLevel" } }
+        fields_of_study: { type: array, items: { type: string } }
+        destination_countries: { type: array, items: { type: string, minLength: 2, maxLength: 2 } }
+        nationality_requirements: { type: array, items: { type: string } }
+        residency_requirements: { type: array, items: { type: string } }
         deadline: { type: [string, "null"], format: date }
         eligibility_summary: { type: [string, "null"] }
+        eligibility: { $ref: "#/components/schemas/EligibilityAssessment" }
+        requirements: { type: array, items: { type: string } }
+        required_documents: { type: array, items: { type: string } }
+        source_url: { type: string, format: uri }
         application_url: { type: [string, "null"], format: uri }
+        provenance: { $ref: "#/components/schemas/ScholarshipProvenance" }
+        verified_at: { type: [string, "null"], format: date-time }
+        saved: { type: boolean }
         status: { type: string, enum: [published, closed] }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
@@ -520,6 +709,32 @@ components:
       properties:
         data: { type: array, items: { $ref: "#/components/schemas/ScholarshipResponse" } }
         pagination: { $ref: "#/components/schemas/Pagination" }
+    SavedScholarshipResponse:
+      type: object
+      additionalProperties: false
+      required: [scholarship_id, saved, updated_at]
+      properties:
+        scholarship_id: { type: string, format: uuid }
+        saved: { type: boolean }
+        updated_at: { type: string, format: date-time }
+    ScholarshipReportCreate:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          enum: [expired, incorrect_deadline, incorrect_eligibility, broken_source, other]
+        details: { type: [string, "null"], maxLength: 2000 }
+    ScholarshipReportResponse:
+      type: object
+      additionalProperties: false
+      required: [id, scholarship_id, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        scholarship_id: { type: string, format: uuid }
+        status: { type: string, enum: [received] }
+        created_at: { type: string, format: date-time }
     ScoreComponent:
       type: object
       additionalProperties: false

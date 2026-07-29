@@ -4,7 +4,7 @@ import {
   apiErrorFromNetwork,
   apiErrorFromResponse,
 } from "@/app/lib/api/errors";
-import type { components } from "@/app/lib/api/schema";
+import type { components, operations } from "@/app/lib/api/schema";
 
 export type ProfileWrite = components["schemas"]["ProfileWrite"];
 export type ProfileResponse = components["schemas"]["ProfileResponse"];
@@ -12,12 +12,22 @@ export type MatchPage = components["schemas"]["MatchPage"];
 export type MatchResponse = components["schemas"]["MatchResponse"];
 export type ApplicationPage = components["schemas"]["ApplicationPage"];
 export type ApplicationResponse = components["schemas"]["ApplicationResponse"];
+export type ScholarshipPage = components["schemas"]["ScholarshipPage"];
+export type ScholarshipResponse = components["schemas"]["ScholarshipResponse"];
+export type EligibilityStatus = components["schemas"]["EligibilityStatus"];
+export type SavedScholarshipResponse =
+  components["schemas"]["SavedScholarshipResponse"];
+export type ScholarshipReportCreate =
+  components["schemas"]["ScholarshipReportCreate"];
+export type ScholarshipReportResponse =
+  components["schemas"]["ScholarshipReportResponse"];
+export type ApplicationCreate = components["schemas"]["ApplicationCreate"];
 
 /** Resolves the current Supabase access token, or null when signed out. */
 export type AccessTokenProvider = () => Promise<string | null>;
 
 type RequestOptions = {
-  method: "GET" | "PUT" | "POST" | "PATCH";
+  method: "GET" | "PUT" | "POST" | "PATCH" | "DELETE";
   path: string;
   body?: unknown;
   idempotencyKey?: string;
@@ -138,7 +148,91 @@ export class ApiClient {
       signal: options.signal,
     });
   }
+
+  /** GET /scholarships — server-filtered discovery results. */
+  async listScholarships(
+    options: ScholarshipListOptions = {},
+  ): Promise<ScholarshipPage> {
+    const { signal, ...query } = options;
+    return this.request<ScholarshipPage>({
+      method: "GET",
+      path: queryPath("/scholarships", query),
+      signal,
+    });
+  }
+
+  async getScholarship(
+    scholarshipId: string,
+    signal?: AbortSignal,
+  ): Promise<ScholarshipResponse> {
+    return this.request<ScholarshipResponse>({
+      method: "GET",
+      path: `/scholarships/${encodeURIComponent(scholarshipId)}`,
+      signal,
+    });
+  }
+
+  async listRelatedScholarships(
+    scholarshipId: string,
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<ScholarshipPage> {
+    return this.request<ScholarshipPage>({
+      method: "GET",
+      path: pagePath(
+        `/scholarships/${encodeURIComponent(scholarshipId)}/related`,
+        options,
+      ),
+      signal: options.signal,
+    });
+  }
+
+  async setScholarshipSaved(
+    scholarshipId: string,
+    saved: boolean,
+    signal?: AbortSignal,
+  ): Promise<SavedScholarshipResponse | null> {
+    return this.request<SavedScholarshipResponse | null>({
+      method: saved ? "PUT" : "DELETE",
+      path: `/scholarships/${encodeURIComponent(scholarshipId)}/saved`,
+      signal,
+    });
+  }
+
+  async createApplication(
+    body: ApplicationCreate,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<ApplicationResponse> {
+    return this.request<ApplicationResponse>({
+      method: "POST",
+      path: "/applications",
+      body,
+      idempotencyKey,
+      signal,
+    });
+  }
+
+  async reportScholarship(
+    scholarshipId: string,
+    body: ScholarshipReportCreate,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<ScholarshipReportResponse> {
+    return this.request<ScholarshipReportResponse>({
+      method: "POST",
+      path: `/scholarships/${encodeURIComponent(scholarshipId)}/reports`,
+      body,
+      idempotencyKey,
+      signal,
+    });
+  }
 }
+
+export type ScholarshipListOptions = NonNullable<
+  operations["listScholarships"]["parameters"]["query"]
+> & {
+  signal?: AbortSignal;
+};
 
 function pagePath(
   path: string,
@@ -149,6 +243,18 @@ function pagePath(
   if (options.cursor) params.set("cursor", options.cursor);
   const query = params.toString();
   return query.length > 0 ? `${path}?${query}` : path;
+}
+
+function queryPath(
+  path: string,
+  options: Record<string, string | number | boolean | undefined>,
+): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(options)) {
+    if (value !== undefined && value !== "") params.set(key, String(value));
+  }
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
 }
 
 function isNotFound(error: unknown): boolean {

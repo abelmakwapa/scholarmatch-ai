@@ -46,7 +46,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List published scholarships. */
+        /**
+         * List published scholarships.
+         * @description Searches title, provider, field of study, and the normalized description.
+         *     Results include the authenticated student's saved state and current
+         *     eligibility assessment. Funding-amount sorting only compares records
+         *     whose amount and currency are directly comparable.
+         */
         get: operations["listScholarships"];
         put?: never;
         post?: never;
@@ -67,6 +73,60 @@ export interface paths {
         get: operations["getScholarship"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scholarships/{scholarship_id}/related": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List related published scholarships from the current catalogue. */
+        get: operations["listRelatedScholarships"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scholarships/{scholarship_id}/saved": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /** Save a scholarship for the authenticated student. */
+        put: operations["saveScholarship"];
+        post?: never;
+        /** Remove a scholarship from the authenticated student's saved list. */
+        delete: operations["unsaveScholarship"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/scholarships/{scholarship_id}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report potentially inaccurate scholarship information. */
+        post: operations["reportScholarship"];
         delete?: never;
         options?: never;
         head?: never;
@@ -276,6 +336,27 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        /** @enum {string} */
+        ScholarshipStudyLevel: "undergraduate" | "postgraduate" | "doctoral" | "other";
+        /** @enum {string} */
+        FundingType: "full" | "partial" | "tuition" | "stipend" | "research" | "other";
+        /** @enum {string} */
+        EligibilityStatus: "eligible" | "potentially_eligible" | "ineligible" | "unknown";
+        EligibilityAssessment: {
+            status: components["schemas"]["EligibilityStatus"];
+            summary: string;
+            reasons: string[];
+            missing_facts: string[];
+        };
+        ScholarshipProvenance: {
+            source_name: string;
+            /** Format: uri */
+            source_url: string;
+            /** Format: date-time */
+            ingested_at: string;
+            /** Format: date-time */
+            last_checked_at: string;
+        };
         ScholarshipResponse: {
             /** Format: uuid */
             id: string;
@@ -284,11 +365,27 @@ export interface components {
             description?: string | null;
             amount?: number | null;
             currency?: string | null;
+            funding_type: components["schemas"]["FundingType"];
+            funding_summary?: string | null;
+            study_levels: components["schemas"]["ScholarshipStudyLevel"][];
+            fields_of_study: string[];
+            destination_countries: string[];
+            nationality_requirements: string[];
+            residency_requirements: string[];
             /** Format: date */
             deadline: string | null;
             eligibility_summary?: string | null;
+            eligibility: components["schemas"]["EligibilityAssessment"];
+            requirements: string[];
+            required_documents: string[];
+            /** Format: uri */
+            source_url: string;
             /** Format: uri */
             application_url?: string | null;
+            provenance: components["schemas"]["ScholarshipProvenance"];
+            /** Format: date-time */
+            verified_at: string | null;
+            saved: boolean;
             /** @enum {string} */
             status: "published" | "closed";
             /** Format: date-time */
@@ -299,6 +396,28 @@ export interface components {
         ScholarshipPage: {
             data: components["schemas"]["ScholarshipResponse"][];
             pagination: components["schemas"]["Pagination"];
+        };
+        SavedScholarshipResponse: {
+            /** Format: uuid */
+            scholarship_id: string;
+            saved: boolean;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ScholarshipReportCreate: {
+            /** @enum {string} */
+            reason: "expired" | "incorrect_deadline" | "incorrect_eligibility" | "broken_source" | "other";
+            details?: string | null;
+        };
+        ScholarshipReportResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            scholarship_id: string;
+            /** @enum {string} */
+            status: "received";
+            /** Format: date-time */
+            created_at: string;
         };
         ScoreComponent: {
             name: string;
@@ -486,6 +605,18 @@ export interface components {
         };
     };
     parameters: {
+        /** @description Searches title, provider, field, and normalized description. */
+        ScholarshipQuery: string;
+        StudyLevel: components["schemas"]["ScholarshipStudyLevel"];
+        Field: string;
+        Destination: string;
+        Nationality: string;
+        Residency: string;
+        FundingType: components["schemas"]["FundingType"];
+        DeadlineFrom: string;
+        DeadlineTo: string;
+        Verified: boolean;
+        ScholarshipSort: "relevance" | "deadline" | "recently_verified" | "funding_amount";
         /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
         Cursor: string;
         Limit: number;
@@ -598,6 +729,18 @@ export interface operations {
     listScholarships: {
         parameters: {
             query?: {
+                /** @description Searches title, provider, field, and normalized description. */
+                q?: components["parameters"]["ScholarshipQuery"];
+                study_level?: components["parameters"]["StudyLevel"];
+                field?: components["parameters"]["Field"];
+                destination?: components["parameters"]["Destination"];
+                nationality?: components["parameters"]["Nationality"];
+                residency?: components["parameters"]["Residency"];
+                funding_type?: components["parameters"]["FundingType"];
+                deadline_from?: components["parameters"]["DeadlineFrom"];
+                deadline_to?: components["parameters"]["DeadlineTo"];
+                verified?: components["parameters"]["Verified"];
+                sort?: components["parameters"]["ScholarshipSort"];
                 /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
                 cursor?: components["parameters"]["Cursor"];
                 limit?: components["parameters"]["Limit"];
@@ -644,6 +787,120 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listRelatedScholarships: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Related scholarship page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScholarshipPage"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    saveScholarship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scholarship saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedScholarshipResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    unsaveScholarship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Scholarship removed from saved list. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    reportScholarship: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScholarshipReportCreate"];
+            };
+        };
+        responses: {
+            /** @description Report received. */
+            201: {
+                headers: {
+                    "Idempotency-Replayed": components["headers"]["IdempotencyReplayed"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScholarshipReportResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
             500: components["responses"]["InternalError"];
         };
     };
