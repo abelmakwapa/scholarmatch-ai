@@ -167,6 +167,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/matches/recalculation-jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the status of a match recalculation job. */
+        get: operations["getMatchRecalculationJob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/matches/{scholarship_id}": {
         parameters: {
             query?: never;
@@ -178,6 +195,26 @@ export interface paths {
         get: operations["getMatch"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/matches/{scholarship_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record structured feedback about one match explanation.
+         * @description Feedback is reviewed and evaluated; submission does not immediately retrain a model.
+         */
+        post: operations["createMatchFeedback"];
         delete?: never;
         options?: never;
         head?: never;
@@ -420,21 +457,50 @@ export interface components {
             created_at: string;
         };
         ScoreComponent: {
-            name: string;
+            /** @enum {string} */
+            name: "academics" | "eligibility_fit" | "interests_goals" | "experience" | "readiness_timing";
             score: number;
             weight: number;
+        };
+        MissingProfileFact: {
+            field: string;
+            question: string;
+        };
+        MatchExplanation: {
+            why_this_matches: string[];
+            what_may_block_you: string[];
+            missing_information: components["schemas"]["MissingProfileFact"][];
+            next_actions: string[];
+        };
+        RequirementEvidence: {
+            label: string;
+            detail: string;
+            /** @enum {string} */
+            basis: "verified_requirement" | "inferred_relevance" | "profile_unknown" | "requirement_not_met";
+            /** Format: uri */
+            source_url: string | null;
         };
         MatchResponse: {
             /** Format: uuid */
             id: string;
+            rank: number;
             scholarship: components["schemas"]["ScholarshipResponse"];
+            /** @description Relative profile-to-scholarship fit score; never a probability of winning. */
             score: number;
+            /** @description Confidence in the score inputs based on profile and requirement completeness; never a probability of winning. */
             confidence: number;
             score_components: components["schemas"]["ScoreComponent"][];
+            requirement_evidence: components["schemas"]["RequirementEvidence"][];
+            deterministic_explanation: components["schemas"]["MatchExplanation"];
+            ai_explanation: components["schemas"]["MatchExplanation"] | null;
             reasons?: string[];
             gaps?: string[];
             /** @enum {string} */
             explanation_status: "pending" | "ready" | "unavailable";
+            algorithm_version: string;
+            /** @enum {string} */
+            calculation_status: "current" | "stale";
+            stale_reasons: string[];
             /** Format: date-time */
             calculated_at: string;
         };
@@ -479,6 +545,29 @@ export interface components {
             id: string;
             /** @enum {string} */
             status: "queued" | "running" | "completed" | "failed";
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            completed_at?: string | null;
+            /** Format: date-time */
+            matches_updated_at?: string | null;
+            error_code?: string | null;
+        };
+        MatchFeedbackCreate: {
+            useful: boolean;
+            /** @enum {string} */
+            reason: "accurate" | "unclear" | "missing_context" | "incorrect" | "not_relevant" | "other";
+            details?: string | null;
+        };
+        MatchFeedbackResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            match_id: string;
+            /** @enum {string} */
+            status: "received";
             /** Format: date-time */
             created_at: string;
         };
@@ -625,6 +714,7 @@ export interface components {
         ScholarshipId: string;
         ApplicationId: string;
         RunId: string;
+        JobId: string;
     };
     requestBodies: never;
     headers: {
@@ -959,6 +1049,31 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    getMatchRecalculationJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: components["parameters"]["JobId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recalculation job status. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     getMatch: {
         parameters: {
             query?: never;
@@ -981,6 +1096,43 @@ export interface operations {
             };
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    createMatchFeedback: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatchFeedbackCreate"];
+            };
+        };
+        responses: {
+            /** @description Feedback received. */
+            201: {
+                headers: {
+                    "Idempotency-Replayed": components["headers"]["IdempotencyReplayed"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchFeedbackResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            429: components["responses"]["RateLimited"];
             500: components["responses"]["InternalError"];
         };
     };

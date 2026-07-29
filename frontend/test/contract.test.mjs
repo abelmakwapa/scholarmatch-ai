@@ -19,6 +19,8 @@ test("the shared API contract is versioned and covers the baseline resources", a
     "/scholarships/{scholarship_id}/saved:",
     "/scholarships/{scholarship_id}/reports:",
     "/matches:",
+    "/matches/recalculation-jobs/{job_id}:",
+    "/matches/{scholarship_id}/feedback:",
     "/applications:",
     "/admin/ingestion-runs:",
   ]) {

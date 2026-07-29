@@ -59,13 +59,56 @@ export const scholarshipFixture: ScholarshipResponse = {
 
 export const matchFixture: MatchResponse = {
   id: "03bbf781-05ec-4137-97ca-073226854bf7",
+  rank: 1,
   scholarship: scholarshipFixture,
   score: 0.82,
   confidence: 0.74,
-  score_components: [],
+  score_components: [
+    { name: "academics", score: 0.9, weight: 0.25 },
+    { name: "eligibility_fit", score: 1, weight: 0.3 },
+    { name: "interests_goals", score: 0.8, weight: 0.2 },
+    { name: "experience", score: 0.6, weight: 0.1 },
+    { name: "readiness_timing", score: 0.7, weight: 0.15 },
+  ],
+  requirement_evidence: [
+    {
+      label: "Undergraduate study",
+      detail: "The published requirement aligns with the profile study level.",
+      basis: "verified_requirement",
+      source_url: "https://example.com/scholarship",
+    },
+    {
+      label: "Computing interest",
+      detail:
+        "The catalogue description appears relevant to a stated interest.",
+      basis: "inferred_relevance",
+      source_url: null,
+    },
+  ],
+  deterministic_explanation: {
+    why_this_matches: ["Your study level aligns with a published requirement."],
+    what_may_block_you: [],
+    missing_information: [
+      { field: "gpa", question: "What is your current GPA?" },
+    ],
+    next_actions: ["Confirm the GPA requirement with the provider."],
+  },
+  ai_explanation: {
+    why_this_matches: [
+      "Your undergraduate mathematics profile aligns with the published study level.",
+    ],
+    what_may_block_you: [],
+    missing_information: [
+      { field: "gpa", question: "What is your current GPA?" },
+    ],
+    next_actions: ["Add your GPA, then verify the provider requirement."],
+  },
   reasons: [],
   gaps: [],
   explanation_status: "ready",
+  algorithm_version: "match-ranker-v1.0",
+  calculation_status: "current",
+  stale_reasons: [],
   calculated_at: "2026-07-25T12:00:00Z",
 };
 

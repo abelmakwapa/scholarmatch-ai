@@ -10,6 +10,11 @@ export type ProfileWrite = components["schemas"]["ProfileWrite"];
 export type ProfileResponse = components["schemas"]["ProfileResponse"];
 export type MatchPage = components["schemas"]["MatchPage"];
 export type MatchResponse = components["schemas"]["MatchResponse"];
+export type MatchExplanation = components["schemas"]["MatchExplanation"];
+export type JobResponse = components["schemas"]["JobResponse"];
+export type MatchFeedbackCreate = components["schemas"]["MatchFeedbackCreate"];
+export type MatchFeedbackResponse =
+  components["schemas"]["MatchFeedbackResponse"];
 export type ApplicationPage = components["schemas"]["ApplicationPage"];
 export type ApplicationResponse = components["schemas"]["ApplicationResponse"];
 export type ScholarshipPage = components["schemas"]["ScholarshipPage"];
@@ -135,6 +140,55 @@ export class ApiClient {
       method: "GET",
       path: pagePath("/matches", options),
       signal: options.signal,
+    });
+  }
+
+  async getMatch(
+    scholarshipId: string,
+    signal?: AbortSignal,
+  ): Promise<MatchResponse> {
+    return this.request<MatchResponse>({
+      method: "GET",
+      path: `/matches/${encodeURIComponent(scholarshipId)}`,
+      signal,
+    });
+  }
+
+  async recalculateMatches(
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<JobResponse> {
+    return this.request<JobResponse>({
+      method: "POST",
+      path: "/matches/recalculate",
+      idempotencyKey,
+      signal,
+    });
+  }
+
+  async getMatchRecalculationJob(
+    jobId: string,
+    signal?: AbortSignal,
+  ): Promise<JobResponse> {
+    return this.request<JobResponse>({
+      method: "GET",
+      path: `/matches/recalculation-jobs/${encodeURIComponent(jobId)}`,
+      signal,
+    });
+  }
+
+  async createMatchFeedback(
+    scholarshipId: string,
+    body: MatchFeedbackCreate,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<MatchFeedbackResponse> {
+    return this.request<MatchFeedbackResponse>({
+      method: "POST",
+      path: `/matches/${encodeURIComponent(scholarshipId)}/feedback`,
+      body,
+      idempotencyKey,
+      signal,
     });
   }
 

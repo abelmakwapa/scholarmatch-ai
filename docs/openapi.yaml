@@ -267,6 +267,22 @@ paths:
         "409": { $ref: "#/components/responses/Conflict" }
         "429": { $ref: "#/components/responses/RateLimited" }
         "500": { $ref: "#/components/responses/InternalError" }
+  /matches/recalculation-jobs/{job_id}:
+    get:
+      operationId: getMatchRecalculationJob
+      tags: [Matches]
+      summary: Get the status of a match recalculation job.
+      parameters:
+        - $ref: "#/components/parameters/JobId"
+      responses:
+        "200":
+          description: Recalculation job status.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/JobResponse" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
   /matches/{scholarship_id}:
     get:
       operationId: getMatch
@@ -283,6 +299,36 @@ paths:
                 $ref: "#/components/schemas/MatchResponse"
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /matches/{scholarship_id}/feedback:
+    post:
+      operationId: createMatchFeedback
+      tags: [Matches]
+      summary: Record structured feedback about one match explanation.
+      description: Feedback is reviewed and evaluated; submission does not immediately retrain a model.
+      parameters:
+        - $ref: "#/components/parameters/ScholarshipId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MatchFeedbackCreate" }
+      responses:
+        "201":
+          description: Feedback received.
+          headers:
+            Idempotency-Replayed:
+              $ref: "#/components/headers/IdempotencyReplayed"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MatchFeedbackResponse" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "429": { $ref: "#/components/responses/RateLimited" }
         "500": { $ref: "#/components/responses/InternalError" }
   /applications:
     get:
@@ -515,6 +561,11 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    JobId:
+      name: job_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
   headers:
     IdempotencyReplayed:
       description: "`true` when this response replays a completed request."
@@ -740,22 +791,73 @@ components:
       additionalProperties: false
       required: [name, score, weight]
       properties:
-        name: { type: string }
+        name:
+          type: string
+          enum: [academics, eligibility_fit, interests_goals, experience, readiness_timing]
         score: { type: number, minimum: 0, maximum: 1 }
         weight: { type: number, minimum: 0, maximum: 1 }
+    MissingProfileFact:
+      type: object
+      additionalProperties: false
+      required: [field, question]
+      properties:
+        field: { type: string }
+        question: { type: string }
+    MatchExplanation:
+      type: object
+      additionalProperties: false
+      required: [why_this_matches, what_may_block_you, missing_information, next_actions]
+      properties:
+        why_this_matches: { type: array, items: { type: string } }
+        what_may_block_you: { type: array, items: { type: string } }
+        missing_information:
+          type: array
+          items: { $ref: "#/components/schemas/MissingProfileFact" }
+        next_actions: { type: array, items: { type: string } }
+    RequirementEvidence:
+      type: object
+      additionalProperties: false
+      required: [label, detail, basis, source_url]
+      properties:
+        label: { type: string }
+        detail: { type: string }
+        basis:
+          type: string
+          enum: [verified_requirement, inferred_relevance, profile_unknown, requirement_not_met]
+        source_url: { type: [string, "null"], format: uri }
     MatchResponse:
       type: object
       additionalProperties: false
-      required: [id, scholarship, score, confidence, score_components, explanation_status, calculated_at]
+      required: [id, rank, scholarship, score, confidence, score_components, requirement_evidence, deterministic_explanation, ai_explanation, explanation_status, algorithm_version, calculation_status, stale_reasons, calculated_at]
       properties:
         id: { type: string, format: uuid }
+        rank: { type: integer, minimum: 1 }
         scholarship: { $ref: "#/components/schemas/ScholarshipResponse" }
-        score: { type: number, minimum: 0, maximum: 1 }
-        confidence: { type: number, minimum: 0, maximum: 1 }
+        score:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Relative profile-to-scholarship fit score; never a probability of winning.
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Confidence in the score inputs based on profile and requirement completeness; never a probability of winning.
         score_components: { type: array, items: { $ref: "#/components/schemas/ScoreComponent" } }
+        requirement_evidence:
+          type: array
+          items: { $ref: "#/components/schemas/RequirementEvidence" }
+        deterministic_explanation: { $ref: "#/components/schemas/MatchExplanation" }
+        ai_explanation:
+          oneOf:
+            - $ref: "#/components/schemas/MatchExplanation"
+            - type: "null"
         reasons: { type: array, items: { type: string } }
         gaps: { type: array, items: { type: string } }
         explanation_status: { type: string, enum: [pending, ready, unavailable] }
+        algorithm_version: { type: string }
+        calculation_status: { type: string, enum: [current, stale] }
+        stale_reasons: { type: array, items: { type: string } }
         calculated_at: { type: string, format: date-time }
     MatchPage:
       type: object
@@ -805,10 +907,33 @@ components:
     JobResponse:
       type: object
       additionalProperties: false
-      required: [id, status, created_at]
+      required: [id, status, created_at, updated_at]
       properties:
         id: { type: string, format: uuid }
         status: { type: string, enum: [queued, running, completed, failed] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        completed_at: { type: [string, "null"], format: date-time }
+        matches_updated_at: { type: [string, "null"], format: date-time }
+        error_code: { type: [string, "null"] }
+    MatchFeedbackCreate:
+      type: object
+      additionalProperties: false
+      required: [useful, reason]
+      properties:
+        useful: { type: boolean }
+        reason:
+          type: string
+          enum: [accurate, unclear, missing_context, incorrect, not_relevant, other]
+        details: { type: [string, "null"], maxLength: 2000 }
+    MatchFeedbackResponse:
+      type: object
+      additionalProperties: false
+      required: [id, match_id, status, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        match_id: { type: string, format: uuid }
+        status: { type: string, enum: [received] }
         created_at: { type: string, format: date-time }
     IngestionRunCreate:
       type: object
