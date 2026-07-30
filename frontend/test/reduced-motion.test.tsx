@@ -21,10 +21,10 @@ beforeEach(() => {
   }));
 });
 
-test("renders the matching demonstration without looping motion when reduced motion is preferred", () => {
+test("delegates motion preferences to the global reduced-motion policy", () => {
   render(<HeroMatcher />);
   expect(screen.getByTestId("hero-matcher")).toHaveAttribute(
     "data-motion",
-    "reduced",
+    "system",
   );
 });

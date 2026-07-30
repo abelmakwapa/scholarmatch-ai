@@ -323,7 +323,7 @@ export function DocumentManager({
                 {confirmingDelete === document.id ? (
                   <div
                     className="delete-confirmation"
-                    role="alertdialog"
+                    role="group"
                     aria-labelledby={`delete-${document.id}`}
                   >
                     <p id={`delete-${document.id}`}>

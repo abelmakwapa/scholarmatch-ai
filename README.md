@@ -69,6 +69,7 @@ Frontend variables in `frontend/.env.local`:
 - `NEXT_PUBLIC_API_BASE_URL`
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_OBSERVABILITY_ENDPOINT` (optional same-origin path; leave blank to disable reporting)
 
 ## Quality commands
 
@@ -81,6 +82,8 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm run performance:budget
+npm run test:e2e:chromium
 ```
 
 ```bash
@@ -93,4 +96,3 @@ make build
 ```
 
 Use `npm run format` and `make format` to apply automatic formatting. The OpenAPI contract is currently checked in directly and is validated by both test suites; update `docs/openapi.yaml` before implementing or changing an endpoint.
-

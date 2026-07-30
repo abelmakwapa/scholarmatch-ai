@@ -5,6 +5,7 @@
 
 /** Paths that require an authenticated session. */
 const PROTECTED_PREFIXES = [
+  "/admin",
   "/onboarding",
   "/dashboard",
   "/matches",

@@ -1,0 +1,34 @@
+{
+  "buildAssets": {
+    "totalJsBytes": 1700000,
+    "maxJsChunkBytes": 270000,
+    "totalCssBytes": 105000,
+    "totalFontBytes": 300000
+  },
+  "routes": {
+    "/": {
+      "manifest": ".next/server/app/page_client-reference-manifest.js",
+      "jsBytes": 100000,
+      "cssBytes": 105000
+    },
+    "/sign-in": {
+      "manifest": ".next/server/app/(auth)/sign-in/page_client-reference-manifest.js",
+      "jsBytes": 365000,
+      "cssBytes": 105000
+    },
+    "/dashboard": {
+      "manifest": ".next/server/app/(app)/dashboard/page_client-reference-manifest.js",
+      "jsBytes": 110000,
+      "cssBytes": 105000
+    },
+    "/admin": {
+      "manifest": ".next/server/app/(admin)/admin/page_client-reference-manifest.js",
+      "jsBytes": 105000,
+      "cssBytes": 105000
+    }
+  },
+  "webVitals": {
+    "/": { "lcpMs": 2500, "inpMs": 200, "cls": 0.1 },
+    "/sign-in": { "lcpMs": 2500, "inpMs": 200, "cls": 0.1 }
+  }
+}

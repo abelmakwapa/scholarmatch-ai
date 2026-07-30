@@ -1,50 +1,23 @@
 import { ArrowUpRight, Sparkles } from "lucide-react";
+import Link from "next/link";
 
-const footerGroups = [
-  {
-    title: "Product",
-    links: [
-      ["How matching works", "#how-it-works"],
-      ["For students", "#students"],
-      ["Features", "#resources"],
-      ["Sign in", "/sign-in"],
-    ],
-  },
-  {
-    title: "Resources",
-    links: [
-      ["Scholarship guide", "/resources/scholarship-guide"],
-      ["Profile checklist", "/resources/profile-checklist"],
-      ["Application planning", "/resources/application-planning"],
-      ["Help center", "/help"],
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      ["About", "#about"],
-      ["Contact", "/contact"],
-      ["Accessibility", "/accessibility"],
-      ["System status", "/status"],
-    ],
-  },
-] as const;
+import { footerUtilityLinks, marketingNavGroups } from "./navigation-data";
 
 export function Footer() {
   return (
-    <footer className="site-footer" id="about">
+    <footer className="site-footer">
       <div className="site-footer__top">
         <div className="site-footer__brand">
-          <a
+          <Link
             aria-label="ScholarMatch home"
             className="wordmark wordmark--footer"
-            href="#top"
+            href="/"
           >
             <span className="wordmark__mark" aria-hidden="true">
               <Sparkles size={16} strokeWidth={2.4} />
             </span>
             <span>ScholarMatch</span>
-          </a>
+          </Link>
           <p>
             Explainable scholarship discovery built around verified eligibility
             and the facts students choose to share.
@@ -52,13 +25,13 @@ export function Footer() {
         </div>
 
         <nav aria-label="Footer navigation" className="site-footer__links">
-          {footerGroups.map((group) => (
-            <div key={group.title}>
-              <h2>{group.title}</h2>
-              {group.links.map(([label, href]) => (
-                <a href={href} key={label}>
-                  {label}
-                </a>
+          {marketingNavGroups.map((group) => (
+            <div key={group.id}>
+              <h2>{group.label}</h2>
+              {group.links.map((link) => (
+                <Link href={link.href} key={link.href}>
+                  {link.label}
+                </Link>
               ))}
             </div>
           ))}
@@ -68,11 +41,13 @@ export function Footer() {
       <div className="site-footer__bottom">
         <p>© {new Date().getFullYear()} ScholarMatch AI</p>
         <div>
-          <a href="/terms">Terms</a>
-          <a href="/privacy">Privacy</a>
-          <a href="/data-controls">Data controls</a>
+          {footerUtilityLinks.map((link) => (
+            <Link href={link.href} key={link.href}>
+              {link.label}
+            </Link>
+          ))}
         </div>
-        <a className="site-footer__top-link" href="#top">
+        <a className="site-footer__top-link" href="#page-top">
           Top <ArrowUpRight aria-hidden="true" size={16} />
         </a>
       </div>

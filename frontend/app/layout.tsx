@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { EB_Garamond, Figtree } from "next/font/google";
+import { WebVitals } from "@/app/components/telemetry/web-vitals";
 import "./globals.css";
 
 const displayFont = EB_Garamond({
@@ -57,8 +58,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${displayFont.variable} ${bodyFont.variable}`}>
-      <body>{children}</body>
+    <html
+      lang="en"
+      className={`${displayFont.variable} ${bodyFont.variable}`}
+      data-scroll-behavior="smooth"
+    >
+      <body>
+        <WebVitals />
+        {children}
+      </body>
     </html>
   );
 }

@@ -162,9 +162,9 @@ describe("private document manager", () => {
     await user.click(
       screen.getByRole("button", { name: `Delete ${document.display_name}` }),
     );
-    expect(screen.getByRole("alertdialog")).toHaveTextContent(
-      /readiness matches.*incomplete/i,
-    );
+    expect(
+      screen.getByRole("group", { name: /delete academic transcript/i }),
+    ).toHaveTextContent(/readiness matches.*incomplete/i);
     expect(mockApi.deleteDocument).not.toHaveBeenCalled();
     await user.click(
       screen.getByRole("button", { name: "Delete permanently" }),

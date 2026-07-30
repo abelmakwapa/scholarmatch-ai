@@ -389,7 +389,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/admin/ingestion-runs": {
+    "/admin/scholarships": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List scholarships in every editorial lifecycle state.
+         * @description Requires a verified JWT with the application admin role.
+         */
+        get: operations["listAdminScholarships"];
+        put?: never;
+        /**
+         * Create a draft scholarship record.
+         * @description Requires a verified JWT with the application admin role.
+         */
+        post: operations["createAdminScholarship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/scholarships/bulk-preview": {
         parameters: {
             query?: never;
             header?: never;
@@ -397,6 +421,238 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
+        put?: never;
+        /**
+         * Preview a bounded bulk lifecycle action without changing data.
+         * @description Requires an admin role. At most 50 explicit scholarship UUIDs are accepted.
+         */
+        post: operations["previewAdminScholarshipBulkAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/scholarships/bulk-action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply a previously previewed bounded bulk lifecycle action.
+         * @description Requires an admin role and an unexpired server-issued preview token.
+         */
+        post: operations["applyAdminScholarshipBulkAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/scholarships/bulk-actions/{operation_id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                operation_id: components["parameters"]["OperationId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo a recoverable bounded bulk lifecycle action.
+         * @description Requires an admin role. The operation must still be inside its server-defined recovery window.
+         */
+        post: operations["undoAdminScholarshipBulkAction"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/scholarships/{scholarship_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get one scholarship including review-only fields.
+         * @description Requires a verified JWT with the application admin role.
+         */
+        get: operations["getAdminScholarship"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Edit mutable scholarship and reviewer fields.
+         * @description Requires an admin role. Published status is changed only through lifecycle operations.
+         */
+        patch: operations["updateAdminScholarship"];
+        trace?: never;
+    };
+    "/admin/scholarships/{scholarship_id}/lifecycle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Review, publish, unpublish, expire, or archive a scholarship.
+         * @description Requires an admin role. The server enforces allowed transitions and appends an audit event.
+         */
+        post: operations["transitionAdminScholarship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/scholarships/{scholarship_id}/requirements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Replace structured scholarship requirements after validation.
+         * @description Requires an admin role and preserves the prior version in audit history.
+         */
+        put: operations["replaceAdminScholarshipRequirements"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List unresolved scholarship duplicate groups.
+         * @description Requires a verified JWT with the application admin role.
+         */
+        get: operations["listAdminDuplicateGroups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/duplicates/{duplicate_id}/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Merge a duplicate group into a selected canonical scholarship.
+         * @description Requires an admin role. Every source-history record is retained on the canonical record.
+         */
+        post: operations["mergeAdminDuplicateGroup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/verification-queue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List scholarships requiring source-change or freshness review.
+         * @description Requires a verified JWT with the application admin role.
+         */
+        get: operations["listAdminVerificationQueue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/verification-queue/{scholarship_id}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Record a completed source verification review.
+         * @description Requires an admin role and appends an audit event.
+         */
+        post: operations["verifyAdminScholarship"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List append-only administrative audit events.
+         * @description Requires a verified JWT with the application admin role.
+         */
+        get: operations["listAdminAuditEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ingestion-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List ingestion runs newest first.
+         * @description Requires a verified JWT with the application admin role.
+         */
+        get: operations["listIngestionRuns"];
         put?: never;
         /**
          * Queue a scholarship ingestion run.
@@ -423,6 +679,26 @@ export interface paths {
         get: operations["getIngestionRun"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/ingestion-runs/{run_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Queue a retry of a failed or cancelled ingestion run.
+         * @description Requires an admin role. The retry links to the original run and is idempotent.
+         */
+        post: operations["retryIngestionRun"];
         delete?: never;
         options?: never;
         head?: never;
@@ -853,6 +1129,229 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
+        /** @enum {string} */
+        AdminScholarshipStatus: "draft" | "in_review" | "published" | "unpublished" | "expired" | "archived";
+        AdminScholarshipWrite: {
+            title: string;
+            provider: string;
+            description?: string | null;
+            funding_type: components["schemas"]["FundingType"];
+            funding_summary?: string | null;
+            /** Format: date */
+            deadline?: string | null;
+            /** Format: uri */
+            source_url: string;
+            reviewer_notes?: string | null;
+        };
+        AdminScholarshipPatch: {
+            title?: string;
+            provider?: string;
+            description?: string | null;
+            funding_type?: components["schemas"]["FundingType"];
+            funding_summary?: string | null;
+            /** Format: date */
+            deadline?: string | null;
+            /** Format: uri */
+            source_url?: string;
+            reviewer_notes?: string | null;
+        };
+        AdminSourceHistoryItem: {
+            /** Format: uuid */
+            id: string;
+            source: string;
+            /** Format: uri */
+            source_url: string;
+            /** Format: date-time */
+            first_seen_at: string;
+            /** Format: date-time */
+            last_seen_at: string;
+            active: boolean;
+        };
+        AdminRequirement: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            constraint: "hard" | "soft";
+            /** @enum {string} */
+            field: "study_level" | "field_of_study" | "destination" | "nationality" | "residency" | "gpa" | "experience" | "document" | "other";
+            /** @enum {string} */
+            operator: "equals" | "not_equals" | "in" | "not_in" | "gte" | "lte" | "contains" | "exists";
+            value: string | number | boolean | string[];
+            source_evidence: {
+                label: string;
+                /** Format: uri */
+                source_url: string;
+                /** @description Plain text only; imported HTML is never returned. */
+                summary: string;
+            };
+            reviewer_notes: string | null;
+        };
+        AdminRequirementWrite: {
+            /** @enum {string} */
+            constraint: "hard" | "soft";
+            /** @enum {string} */
+            field: "study_level" | "field_of_study" | "destination" | "nationality" | "residency" | "gpa" | "experience" | "document" | "other";
+            /** @enum {string} */
+            operator: "equals" | "not_equals" | "in" | "not_in" | "gte" | "lte" | "contains" | "exists";
+            value: string | number | boolean | string[];
+            source_evidence: {
+                label: string;
+                /** Format: uri */
+                source_url: string;
+                summary: string;
+            };
+            reviewer_notes: string | null;
+        };
+        AdminRequirementSetWrite: {
+            requirements: components["schemas"]["AdminRequirementWrite"][];
+        };
+        AdminScholarshipResponse: components["schemas"]["AdminScholarshipWrite"] & {
+            /** Format: uuid */
+            id: string;
+            status: components["schemas"]["AdminScholarshipStatus"];
+            allowed_transitions: ("submit_for_review" | "publish" | "unpublish" | "expire" | "archive")[];
+            requirements: components["schemas"]["AdminRequirement"][];
+            source_history: components["schemas"]["AdminSourceHistoryItem"][];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            published_at: string | null;
+            /** Format: date-time */
+            verified_at: string | null;
+        };
+        AdminScholarshipPage: {
+            data: components["schemas"]["AdminScholarshipResponse"][];
+            pagination: components["schemas"]["Pagination"];
+        };
+        AdminLifecycleTransition: {
+            /** @enum {string} */
+            action: "submit_for_review" | "publish" | "unpublish" | "expire" | "archive";
+            reviewer_notes: string | null;
+        };
+        AdminBulkActionPreviewRequest: {
+            scholarship_ids: string[];
+            /** @enum {string} */
+            action: "publish" | "unpublish" | "expire" | "archive";
+        };
+        AdminBulkActionPreviewResponse: {
+            preview_token: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** @enum {string} */
+            action: "publish" | "unpublish" | "expire" | "archive";
+            affected: components["schemas"]["AdminScholarshipResponse"][];
+            blocked: {
+                /** Format: uuid */
+                scholarship_id: string;
+                title: string;
+                reason: string;
+            }[];
+        };
+        AdminBulkActionApplyRequest: {
+            preview_token: string;
+        };
+        AdminBulkActionResponse: {
+            /** Format: uuid */
+            operation_id: string;
+            accepted_count: number;
+            /** Format: date-time */
+            recoverable_until: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminBulkUndoResponse: {
+            /** Format: uuid */
+            operation_id: string;
+            reverted_count: number;
+            /** Format: date-time */
+            reverted_at: string;
+        };
+        AdminDuplicateCandidate: {
+            /** Format: uuid */
+            scholarship_id: string;
+            title: string;
+            provider: string;
+            status: components["schemas"]["AdminScholarshipStatus"];
+            source_history: components["schemas"]["AdminSourceHistoryItem"][];
+        };
+        AdminDuplicateGroup: {
+            /** Format: uuid */
+            id: string;
+            reason: string;
+            candidates: components["schemas"]["AdminDuplicateCandidate"][];
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminDuplicatePage: {
+            data: components["schemas"]["AdminDuplicateGroup"][];
+            pagination: components["schemas"]["Pagination"];
+        };
+        AdminDuplicateMergeRequest: {
+            /** Format: uuid */
+            canonical_scholarship_id: string;
+            duplicate_scholarship_ids: string[];
+            reviewer_notes: string;
+        };
+        AdminDuplicateMergeResponse: {
+            /** Format: uuid */
+            canonical_scholarship_id: string;
+            merged_scholarship_ids: string[];
+            preserved_source_history_count: number;
+            /** Format: uuid */
+            audit_event_id: string;
+            /** Format: date-time */
+            merged_at: string;
+        };
+        AdminSourceFieldChange: {
+            field: string;
+            before_summary: string | null;
+            after_summary: string | null;
+            /** Format: uri */
+            source_url: string;
+        };
+        AdminVerificationItem: {
+            /** Format: uuid */
+            scholarship_id: string;
+            title: string;
+            provider: string;
+            /** @enum {string} */
+            freshness: "current" | "due" | "stale" | "changed";
+            /** Format: date-time */
+            last_verified_at: string | null;
+            changed_fields: components["schemas"]["AdminSourceFieldChange"][];
+            /** Format: uri */
+            source_url: string;
+        };
+        AdminVerificationPage: {
+            data: components["schemas"]["AdminVerificationItem"][];
+            pagination: components["schemas"]["Pagination"];
+        };
+        AdminVerificationWrite: {
+            reviewer_notes: string;
+            accept_source_changes: boolean;
+        };
+        AdminAuditEvent: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            actor_id: string;
+            action: string;
+            /** @enum {string} */
+            target_type: "scholarship" | "ingestion_run" | "duplicate_group" | "verification";
+            /** Format: uuid */
+            target_id: string;
+            target_name: string;
+            /** @description Safe plain-text summary without tokens or imported HTML. */
+            summary: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        AdminAuditEventPage: {
+            data: components["schemas"]["AdminAuditEvent"][];
+            pagination: components["schemas"]["Pagination"];
+        };
         IngestionRunCreate: {
             source: string;
             /** Format: uri */
@@ -864,21 +1363,35 @@ export interface components {
             /** Format: uuid */
             id: string;
             source: string;
+            /** Format: uri */
+            source_url: string | null;
             /** @enum {string} */
             status: "queued" | "running" | "completed" | "failed" | "cancelled";
             counters: {
                 fetched: number;
                 created: number;
                 updated: number;
-                skipped: number;
-                failed: number;
+                duplicates: number;
+                rejected: number;
             };
+            safe_errors: {
+                code: string;
+                /** @description Sanitized plain text without raw payloads */
+                summary: string;
+                count: number;
+            }[];
+            /** Format: uuid */
+            original_run_id: string | null;
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
             updated_at: string;
             /** Format: date-time */
-            completed_at?: string | null;
+            completed_at: string | null;
+        };
+        IngestionRunPage: {
+            data: components["schemas"]["IngestionRunResponse"][];
+            pagination: components["schemas"]["Pagination"];
         };
     };
     responses: {
@@ -996,6 +1509,8 @@ export interface components {
         ScholarshipId: string;
         ApplicationId: string;
         RunId: string;
+        DuplicateId: string;
+        OperationId: string;
         DocumentId: string;
         ChecklistItemId: string;
         JobId: string;
@@ -1839,6 +2354,465 @@ export interface operations {
             500: components["responses"]["InternalError"];
         };
     };
+    listAdminScholarships: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Admin scholarship page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminScholarshipPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    createAdminScholarship: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminScholarshipWrite"];
+            };
+        };
+        responses: {
+            /** @description Draft created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminScholarshipResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    previewAdminScholarshipBulkAction: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminBulkActionPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Preview with affected and blocked records. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBulkActionPreviewResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    applyAdminScholarshipBulkAction: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminBulkActionApplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Bulk action accepted. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBulkActionResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    undoAdminScholarshipBulkAction: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                operation_id: components["parameters"]["OperationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Bulk action reverted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminBulkUndoResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    getAdminScholarship: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Admin scholarship detail. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminScholarshipResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    updateAdminScholarship: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminScholarshipPatch"];
+            };
+        };
+        responses: {
+            /** @description Scholarship updated. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminScholarshipResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    transitionAdminScholarship: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminLifecycleTransition"];
+            };
+        };
+        responses: {
+            /** @description Lifecycle transition applied. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminScholarshipResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    replaceAdminScholarshipRequirements: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminRequirementSetWrite"];
+            };
+        };
+        responses: {
+            /** @description Requirements replaced. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminScholarshipResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listAdminDuplicateGroups: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Duplicate group page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDuplicatePage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    mergeAdminDuplicateGroup: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                duplicate_id: components["parameters"]["DuplicateId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminDuplicateMergeRequest"];
+            };
+        };
+        responses: {
+            /** @description Duplicate group merged with source history preserved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDuplicateMergeResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listAdminVerificationQueue: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Verification queue page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminVerificationPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    verifyAdminScholarship: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                scholarship_id: components["parameters"]["ScholarshipId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminVerificationWrite"];
+            };
+        };
+        responses: {
+            /** @description Verification completed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminVerificationItem"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["ValidationError"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listAdminAuditEvents: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Audit event page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminAuditEventPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    listIngestionRuns: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned as `pagination.next_cursor`; clients must not parse it. */
+                cursor?: components["parameters"]["Cursor"];
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ingestion run page. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngestionRunPage"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalError"];
+        };
+    };
     createIngestionRun: {
         parameters: {
             query?: never;
@@ -1897,6 +2871,37 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
+            500: components["responses"]["InternalError"];
+        };
+    };
+    retryIngestionRun: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description Caller-generated opaque key. Do not include credentials or personal data. */
+                "Idempotency-Key": components["parameters"]["IdempotencyKey"];
+            };
+            path: {
+                run_id: components["parameters"]["RunId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Retry queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngestionRunResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            429: components["responses"]["RateLimited"];
             500: components["responses"]["InternalError"];
         };
     };

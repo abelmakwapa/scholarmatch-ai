@@ -614,7 +614,250 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "500": { $ref: "#/components/responses/InternalError" }
+  /admin/scholarships:
+    get:
+      operationId: listAdminScholarships
+      tags: [Admin ingestion]
+      summary: List scholarships in every editorial lifecycle state.
+      description: Requires a verified JWT with the application admin role.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200": { description: Admin scholarship page., content: { application/json: { schema: { $ref: "#/components/schemas/AdminScholarshipPage" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    post:
+      operationId: createAdminScholarship
+      tags: [Admin ingestion]
+      summary: Create a draft scholarship record.
+      description: Requires a verified JWT with the application admin role.
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminScholarshipWrite" } } }
+      responses:
+        "201": { description: Draft created., content: { application/json: { schema: { $ref: "#/components/schemas/AdminScholarshipResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/scholarships/bulk-preview:
+    post:
+      operationId: previewAdminScholarshipBulkAction
+      tags: [Admin ingestion]
+      summary: Preview a bounded bulk lifecycle action without changing data.
+      description: Requires an admin role. At most 50 explicit scholarship UUIDs are accepted.
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminBulkActionPreviewRequest" } } }
+      responses:
+        "200": { description: Preview with affected and blocked records., content: { application/json: { schema: { $ref: "#/components/schemas/AdminBulkActionPreviewResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/scholarships/bulk-action:
+    post:
+      operationId: applyAdminScholarshipBulkAction
+      tags: [Admin ingestion]
+      summary: Apply a previously previewed bounded bulk lifecycle action.
+      description: Requires an admin role and an unexpired server-issued preview token.
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminBulkActionApplyRequest" } } }
+      responses:
+        "202": { description: Bulk action accepted., content: { application/json: { schema: { $ref: "#/components/schemas/AdminBulkActionResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/scholarships/bulk-actions/{operation_id}/undo:
+    parameters: [{ $ref: "#/components/parameters/OperationId" }]
+    post:
+      operationId: undoAdminScholarshipBulkAction
+      tags: [Admin ingestion]
+      summary: Undo a recoverable bounded bulk lifecycle action.
+      description: Requires an admin role. The operation must still be inside its server-defined recovery window.
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      responses:
+        "200": { description: Bulk action reverted., content: { application/json: { schema: { $ref: "#/components/schemas/AdminBulkUndoResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/scholarships/{scholarship_id}:
+    parameters: [{ $ref: "#/components/parameters/ScholarshipId" }]
+    get:
+      operationId: getAdminScholarship
+      tags: [Admin ingestion]
+      summary: Get one scholarship including review-only fields.
+      description: Requires a verified JWT with the application admin role.
+      responses:
+        "200": { description: Admin scholarship detail., content: { application/json: { schema: { $ref: "#/components/schemas/AdminScholarshipResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+    patch:
+      operationId: updateAdminScholarship
+      tags: [Admin ingestion]
+      summary: Edit mutable scholarship and reviewer fields.
+      description: Requires an admin role. Published status is changed only through lifecycle operations.
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminScholarshipPatch" } } }
+      responses:
+        "200": { description: Scholarship updated., content: { application/json: { schema: { $ref: "#/components/schemas/AdminScholarshipResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/scholarships/{scholarship_id}/lifecycle:
+    post:
+      operationId: transitionAdminScholarship
+      tags: [Admin ingestion]
+      summary: Review, publish, unpublish, expire, or archive a scholarship.
+      description: Requires an admin role. The server enforces allowed transitions and appends an audit event.
+      parameters:
+        - $ref: "#/components/parameters/ScholarshipId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminLifecycleTransition" } } }
+      responses:
+        "200": { description: Lifecycle transition applied., content: { application/json: { schema: { $ref: "#/components/schemas/AdminScholarshipResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/scholarships/{scholarship_id}/requirements:
+    put:
+      operationId: replaceAdminScholarshipRequirements
+      tags: [Admin ingestion]
+      summary: Replace structured scholarship requirements after validation.
+      description: Requires an admin role and preserves the prior version in audit history.
+      parameters:
+        - $ref: "#/components/parameters/ScholarshipId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminRequirementSetWrite" } } }
+      responses:
+        "200": { description: Requirements replaced., content: { application/json: { schema: { $ref: "#/components/schemas/AdminScholarshipResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/duplicates:
+    get:
+      operationId: listAdminDuplicateGroups
+      tags: [Admin ingestion]
+      summary: List unresolved scholarship duplicate groups.
+      description: Requires a verified JWT with the application admin role.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200": { description: Duplicate group page., content: { application/json: { schema: { $ref: "#/components/schemas/AdminDuplicatePage" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/duplicates/{duplicate_id}/merge:
+    post:
+      operationId: mergeAdminDuplicateGroup
+      tags: [Admin ingestion]
+      summary: Merge a duplicate group into a selected canonical scholarship.
+      description: Requires an admin role. Every source-history record is retained on the canonical record.
+      parameters:
+        - $ref: "#/components/parameters/DuplicateId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminDuplicateMergeRequest" } } }
+      responses:
+        "200": { description: Duplicate group merged with source history preserved., content: { application/json: { schema: { $ref: "#/components/schemas/AdminDuplicateMergeResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/verification-queue:
+    get:
+      operationId: listAdminVerificationQueue
+      tags: [Admin ingestion]
+      summary: List scholarships requiring source-change or freshness review.
+      description: Requires a verified JWT with the application admin role.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200": { description: Verification queue page., content: { application/json: { schema: { $ref: "#/components/schemas/AdminVerificationPage" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/verification-queue/{scholarship_id}/verify:
+    post:
+      operationId: verifyAdminScholarship
+      tags: [Admin ingestion]
+      summary: Record a completed source verification review.
+      description: Requires an admin role and appends an audit event.
+      parameters:
+        - $ref: "#/components/parameters/ScholarshipId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/AdminVerificationWrite" } } }
+      responses:
+        "200": { description: Verification completed., content: { application/json: { schema: { $ref: "#/components/schemas/AdminVerificationItem" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "422": { $ref: "#/components/responses/ValidationError" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/audit-events:
+    get:
+      operationId: listAdminAuditEvents
+      tags: [Admin ingestion]
+      summary: List append-only administrative audit events.
+      description: Requires a verified JWT with the application admin role.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200": { description: Audit event page., content: { application/json: { schema: { $ref: "#/components/schemas/AdminAuditEventPage" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
   /admin/ingestion-runs:
+    get:
+      operationId: listIngestionRuns
+      tags: [Admin ingestion]
+      summary: List ingestion runs newest first.
+      description: Requires a verified JWT with the application admin role.
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200": { description: Ingestion run page., content: { application/json: { schema: { $ref: "#/components/schemas/IngestionRunPage" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/InternalError" }
     post:
       operationId: createIngestionRun
       tags: [Admin ingestion]
@@ -663,6 +906,23 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+  /admin/ingestion-runs/{run_id}/retry:
+    post:
+      operationId: retryIngestionRun
+      tags: [Admin ingestion]
+      summary: Queue a retry of a failed or cancelled ingestion run.
+      description: Requires an admin role. The retry links to the original run and is idempotent.
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "202": { description: Retry queued., content: { application/json: { schema: { $ref: "#/components/schemas/IngestionRunResponse" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "429": { $ref: "#/components/responses/RateLimited" }
         "500": { $ref: "#/components/responses/InternalError" }
 components:
   securitySchemes:
@@ -789,6 +1049,16 @@ components:
       schema: { type: string, format: uuid }
     RunId:
       name: run_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    DuplicateId:
+      name: duplicate_id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    OperationId:
+      name: operation_id
       in: path
       required: true
       schema: { type: string, format: uuid }
@@ -1643,6 +1913,295 @@ components:
         match_id: { type: string, format: uuid }
         status: { type: string, enum: [received] }
         created_at: { type: string, format: date-time }
+    AdminScholarshipStatus:
+      type: string
+      enum: [draft, in_review, published, unpublished, expired, archived]
+    AdminScholarshipWrite:
+      type: object
+      additionalProperties: false
+      required: [title, provider, funding_type, source_url]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 300 }
+        provider: { type: string, minLength: 1, maxLength: 300 }
+        description: { type: [string, "null"], maxLength: 20000 }
+        funding_type: { $ref: "#/components/schemas/FundingType" }
+        funding_summary: { type: [string, "null"], maxLength: 2000 }
+        deadline: { type: [string, "null"], format: date }
+        source_url: { type: string, format: uri, pattern: "^https://" }
+        reviewer_notes: { type: [string, "null"], maxLength: 5000 }
+    AdminScholarshipPatch:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        title: { type: string, minLength: 1, maxLength: 300 }
+        provider: { type: string, minLength: 1, maxLength: 300 }
+        description: { type: [string, "null"], maxLength: 20000 }
+        funding_type: { $ref: "#/components/schemas/FundingType" }
+        funding_summary: { type: [string, "null"], maxLength: 2000 }
+        deadline: { type: [string, "null"], format: date }
+        source_url: { type: string, format: uri, pattern: "^https://" }
+        reviewer_notes: { type: [string, "null"], maxLength: 5000 }
+    AdminSourceHistoryItem:
+      type: object
+      additionalProperties: false
+      required: [id, source, source_url, first_seen_at, last_seen_at, active]
+      properties:
+        id: { type: string, format: uuid }
+        source: { type: string }
+        source_url: { type: string, format: uri, pattern: "^https://" }
+        first_seen_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time }
+        active: { type: boolean }
+    AdminRequirement:
+      type: object
+      additionalProperties: false
+      required: [id, constraint, field, operator, value, source_evidence, reviewer_notes]
+      properties:
+        id: { type: string, format: uuid }
+        constraint: { type: string, enum: [hard, soft] }
+        field:
+          type: string
+          enum: [study_level, field_of_study, destination, nationality, residency, gpa, experience, document, other]
+        operator: { type: string, enum: [equals, not_equals, in, not_in, gte, lte, contains, exists] }
+        value:
+          oneOf:
+            - { type: string, maxLength: 1000 }
+            - { type: number }
+            - { type: boolean }
+            - { type: array, maxItems: 100, items: { type: string, maxLength: 300 } }
+        source_evidence:
+          type: object
+          additionalProperties: false
+          required: [label, source_url, summary]
+          properties:
+            label: { type: string, minLength: 1, maxLength: 300 }
+            source_url: { type: string, format: uri, pattern: "^https://" }
+            summary: { type: string, minLength: 1, maxLength: 2000, description: Plain text only; imported HTML is never returned. }
+        reviewer_notes: { type: [string, "null"], maxLength: 3000 }
+    AdminRequirementWrite:
+      type: object
+      additionalProperties: false
+      required: [constraint, field, operator, value, source_evidence, reviewer_notes]
+      properties:
+        constraint: { type: string, enum: [hard, soft] }
+        field:
+          type: string
+          enum: [study_level, field_of_study, destination, nationality, residency, gpa, experience, document, other]
+        operator: { type: string, enum: [equals, not_equals, in, not_in, gte, lte, contains, exists] }
+        value:
+          oneOf:
+            - { type: string, maxLength: 1000 }
+            - { type: number }
+            - { type: boolean }
+            - { type: array, maxItems: 100, items: { type: string, maxLength: 300 } }
+        source_evidence:
+          type: object
+          additionalProperties: false
+          required: [label, source_url, summary]
+          properties:
+            label: { type: string, minLength: 1, maxLength: 300 }
+            source_url: { type: string, format: uri, pattern: "^https://" }
+            summary: { type: string, minLength: 1, maxLength: 2000 }
+        reviewer_notes: { type: [string, "null"], maxLength: 3000 }
+    AdminRequirementSetWrite:
+      type: object
+      additionalProperties: false
+      required: [requirements]
+      properties:
+        requirements:
+          type: array
+          maxItems: 100
+          items: { $ref: "#/components/schemas/AdminRequirementWrite" }
+    AdminScholarshipResponse:
+      allOf:
+        - $ref: "#/components/schemas/AdminScholarshipWrite"
+        - type: object
+          required: [id, status, allowed_transitions, requirements, source_history, created_at, updated_at, published_at, verified_at]
+          properties:
+            id: { type: string, format: uuid }
+            status: { $ref: "#/components/schemas/AdminScholarshipStatus" }
+            allowed_transitions:
+              type: array
+              items: { type: string, enum: [submit_for_review, publish, unpublish, expire, archive] }
+            requirements: { type: array, items: { $ref: "#/components/schemas/AdminRequirement" } }
+            source_history: { type: array, items: { $ref: "#/components/schemas/AdminSourceHistoryItem" } }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+            published_at: { type: [string, "null"], format: date-time }
+            verified_at: { type: [string, "null"], format: date-time }
+    AdminScholarshipPage:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/AdminScholarshipResponse" } }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+    AdminLifecycleTransition:
+      type: object
+      additionalProperties: false
+      required: [action, reviewer_notes]
+      properties:
+        action: { type: string, enum: [submit_for_review, publish, unpublish, expire, archive] }
+        reviewer_notes: { type: [string, "null"], maxLength: 3000 }
+    AdminBulkActionPreviewRequest:
+      type: object
+      additionalProperties: false
+      required: [scholarship_ids, action]
+      properties:
+        scholarship_ids:
+          type: array
+          minItems: 1
+          maxItems: 50
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        action: { type: string, enum: [publish, unpublish, expire, archive] }
+    AdminBulkActionPreviewResponse:
+      type: object
+      additionalProperties: false
+      required: [preview_token, expires_at, action, affected, blocked]
+      properties:
+        preview_token: { type: string, minLength: 1, maxLength: 2048 }
+        expires_at: { type: string, format: date-time }
+        action: { type: string, enum: [publish, unpublish, expire, archive] }
+        affected: { type: array, items: { $ref: "#/components/schemas/AdminScholarshipResponse" } }
+        blocked:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [scholarship_id, title, reason]
+            properties:
+              scholarship_id: { type: string, format: uuid }
+              title: { type: string }
+              reason: { type: string }
+    AdminBulkActionApplyRequest:
+      type: object
+      additionalProperties: false
+      required: [preview_token]
+      properties:
+        preview_token: { type: string, minLength: 1, maxLength: 2048 }
+    AdminBulkActionResponse:
+      type: object
+      additionalProperties: false
+      required: [operation_id, accepted_count, recoverable_until, created_at]
+      properties:
+        operation_id: { type: string, format: uuid }
+        accepted_count: { type: integer, minimum: 0, maximum: 50 }
+        recoverable_until: { type: [string, "null"], format: date-time }
+        created_at: { type: string, format: date-time }
+    AdminBulkUndoResponse:
+      type: object
+      additionalProperties: false
+      required: [operation_id, reverted_count, reverted_at]
+      properties:
+        operation_id: { type: string, format: uuid }
+        reverted_count: { type: integer, minimum: 0, maximum: 50 }
+        reverted_at: { type: string, format: date-time }
+    AdminDuplicateCandidate:
+      type: object
+      additionalProperties: false
+      required: [scholarship_id, title, provider, status, source_history]
+      properties:
+        scholarship_id: { type: string, format: uuid }
+        title: { type: string }
+        provider: { type: string }
+        status: { $ref: "#/components/schemas/AdminScholarshipStatus" }
+        source_history: { type: array, minItems: 1, items: { $ref: "#/components/schemas/AdminSourceHistoryItem" } }
+    AdminDuplicateGroup:
+      type: object
+      additionalProperties: false
+      required: [id, reason, candidates, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        reason: { type: string }
+        candidates: { type: array, minItems: 2, items: { $ref: "#/components/schemas/AdminDuplicateCandidate" } }
+        created_at: { type: string, format: date-time }
+    AdminDuplicatePage:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/AdminDuplicateGroup" } }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+    AdminDuplicateMergeRequest:
+      type: object
+      additionalProperties: false
+      required: [canonical_scholarship_id, duplicate_scholarship_ids, reviewer_notes]
+      properties:
+        canonical_scholarship_id: { type: string, format: uuid }
+        duplicate_scholarship_ids:
+          type: array
+          minItems: 1
+          maxItems: 20
+          uniqueItems: true
+          items: { type: string, format: uuid }
+        reviewer_notes: { type: string, minLength: 1, maxLength: 3000 }
+    AdminDuplicateMergeResponse:
+      type: object
+      additionalProperties: false
+      required: [canonical_scholarship_id, merged_scholarship_ids, preserved_source_history_count, audit_event_id, merged_at]
+      properties:
+        canonical_scholarship_id: { type: string, format: uuid }
+        merged_scholarship_ids: { type: array, items: { type: string, format: uuid } }
+        preserved_source_history_count: { type: integer, minimum: 1 }
+        audit_event_id: { type: string, format: uuid }
+        merged_at: { type: string, format: date-time }
+    AdminSourceFieldChange:
+      type: object
+      additionalProperties: false
+      required: [field, before_summary, after_summary, source_url]
+      properties:
+        field: { type: string }
+        before_summary: { type: [string, "null"], maxLength: 2000 }
+        after_summary: { type: [string, "null"], maxLength: 2000 }
+        source_url: { type: string, format: uri, pattern: "^https://" }
+    AdminVerificationItem:
+      type: object
+      additionalProperties: false
+      required: [scholarship_id, title, provider, freshness, last_verified_at, changed_fields, source_url]
+      properties:
+        scholarship_id: { type: string, format: uuid }
+        title: { type: string }
+        provider: { type: string }
+        freshness: { type: string, enum: [current, due, stale, changed] }
+        last_verified_at: { type: [string, "null"], format: date-time }
+        changed_fields: { type: array, items: { $ref: "#/components/schemas/AdminSourceFieldChange" } }
+        source_url: { type: string, format: uri, pattern: "^https://" }
+    AdminVerificationPage:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/AdminVerificationItem" } }
+        pagination: { $ref: "#/components/schemas/Pagination" }
+    AdminVerificationWrite:
+      type: object
+      additionalProperties: false
+      required: [reviewer_notes, accept_source_changes]
+      properties:
+        reviewer_notes: { type: string, minLength: 1, maxLength: 3000 }
+        accept_source_changes: { type: boolean }
+    AdminAuditEvent:
+      type: object
+      additionalProperties: false
+      required: [id, actor_id, action, target_type, target_id, target_name, summary, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        actor_id: { type: string, format: uuid }
+        action: { type: string }
+        target_type: { type: string, enum: [scholarship, ingestion_run, duplicate_group, verification] }
+        target_id: { type: string, format: uuid }
+        target_name: { type: string }
+        summary: { type: string, maxLength: 2000, description: Safe plain-text summary without tokens or imported HTML. }
+        created_at: { type: string, format: date-time }
+    AdminAuditEventPage:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/AdminAuditEvent" } }
+        pagination: { $ref: "#/components/schemas/Pagination" }
     IngestionRunCreate:
       type: object
       additionalProperties: false
@@ -1654,10 +2213,11 @@ components:
     IngestionRunResponse:
       type: object
       additionalProperties: false
-      required: [id, source, status, counters, created_at, updated_at]
+      required: [id, source, source_url, status, counters, safe_errors, original_run_id, created_at, updated_at, completed_at]
       properties:
         id: { type: string, format: uuid }
         source: { type: string }
+        source_url: { type: [string, "null"], format: uri, pattern: "^https://" }
         status:
           {
             type: string,
@@ -1666,13 +2226,32 @@ components:
         counters:
           type: object
           additionalProperties: false
-          required: [fetched, created, updated, skipped, failed]
+          required: [fetched, created, updated, duplicates, rejected]
           properties:
             fetched: { type: integer, minimum: 0 }
             created: { type: integer, minimum: 0 }
             updated: { type: integer, minimum: 0 }
-            skipped: { type: integer, minimum: 0 }
-            failed: { type: integer, minimum: 0 }
+            duplicates: { type: integer, minimum: 0 }
+            rejected: { type: integer, minimum: 0 }
+        safe_errors:
+          type: array
+          maxItems: 100
+          items:
+            type: object
+            additionalProperties: false
+            required: [code, summary, count]
+            properties:
+              code: { type: string, pattern: "^[A-Z][A-Z0-9_]+$" }
+              summary: { type: string, maxLength: 1000, description: Sanitized plain text without raw payloads, HTML, or tokens. }
+              count: { type: integer, minimum: 1 }
+        original_run_id: { type: [string, "null"], format: uuid }
         created_at: { type: string, format: date-time }
         updated_at: { type: string, format: date-time }
         completed_at: { type: [string, "null"], format: date-time }
+    IngestionRunPage:
+      type: object
+      additionalProperties: false
+      required: [data, pagination]
+      properties:
+        data: { type: array, items: { $ref: "#/components/schemas/IngestionRunResponse" } }
+        pagination: { $ref: "#/components/schemas/Pagination" }

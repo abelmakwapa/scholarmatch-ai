@@ -20,20 +20,20 @@ The ScholarMatch marketing experience should be a faithful adaptation of the vis
 
 ### Design characteristics to reproduce
 
-| Reference characteristic | ScholarMatch adaptation |
-| --- | --- |
-| Warm ivory canvas | Use `#FFFFEB` as the primary marketing background. |
-| Near-black editorial sections | Use `#1A1A1A` for high-contrast story and product-demo sections. |
-| Lavender primary CTA | Use `#F0D7FF` with an ink border and high-contrast text. |
-| Oversized editorial serif headings | Use EB Garamond for display copy, including approximately 120px/0.85 line-height on large screens and fluid responsive scaling. |
-| Clean sans-serif utility copy | Use Figtree for navigation, body text, labels, controls, and the authenticated product. |
-| Floating, bordered navigation | Create an inset sticky header with a subtle border, 12px radius, compact menu, and prominent CTA. |
-| Alternating light and dark storytelling sections | Translate the rhythm into scholarship discovery, matching, deadline, and application stories. |
-| Large rounded product demonstrations | Build original ScholarMatch interface mockups or live components; never reuse Wispr media. |
-| Marquees and horizontal proof bands | Use verified scholarship categories, study destinations, or partner logos only when permission and evidence exist. |
-| Tabbed audience/use-case section | Use Undergraduate, Postgraduate, International, STEM, Research, and Community categories. |
-| Large testimonial carousel and case-study cards | Use real approved ScholarMatch research or clearly labeled placeholders; do not invent endorsements. |
-| Restrained but expressive motion | Use reveal, marquee, tab, and carousel motion with a complete reduced-motion fallback. |
+| Reference characteristic                         | ScholarMatch adaptation                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Warm ivory canvas                                | Use `#FFFFEB` as the primary marketing background.                                                                              |
+| Near-black editorial sections                    | Use `#1A1A1A` for high-contrast story and product-demo sections.                                                                |
+| Lavender primary CTA                             | Use `#F0D7FF` with an ink border and high-contrast text.                                                                        |
+| Oversized editorial serif headings               | Use EB Garamond for display copy, including approximately 120px/0.85 line-height on large screens and fluid responsive scaling. |
+| Clean sans-serif utility copy                    | Use Figtree for navigation, body text, labels, controls, and the authenticated product.                                         |
+| Floating, bordered navigation                    | Create an inset sticky header with a subtle border, 12px radius, compact menu, and prominent CTA.                               |
+| Alternating light and dark storytelling sections | Translate the rhythm into scholarship discovery, matching, deadline, and application stories.                                   |
+| Large rounded product demonstrations             | Build original ScholarMatch interface mockups or live components; never reuse Wispr media.                                      |
+| Marquees and horizontal proof bands              | Use verified scholarship categories, study destinations, or partner logos only when permission and evidence exist.              |
+| Tabbed audience/use-case section                 | Use Undergraduate, Postgraduate, International, STEM, Research, and Community categories.                                       |
+| Large testimonial carousel and case-study cards  | Use real approved ScholarMatch research or clearly labeled placeholders; do not invent endorsements.                            |
+| Restrained but expressive motion                 | Use reveal, marquee, tab, and carousel motion with a complete reduced-motion fallback.                                          |
 
 ### Originality and content rules
 
@@ -93,27 +93,27 @@ The dates illustrate an eight-week run beginning Monday, 3 August 2026. Shift th
 
 ### Prompt-by-prompt schedule
 
-| ID | Development window | Estimate | Owner | Outcome |
-| --- | --- | ---: | --- | --- |
-| P00 | Week 1 | 2 days shared | Full team | Runnable baseline, contracts, decision log, and quality gates. |
-| FE01 | Weeks 1–2 | 5 days | Frontend | Original ScholarMatch landing page faithfully adapting the reference design language. |
-| FE02 | Week 2 | 3 days | Frontend | Authentication and accessible student onboarding. |
-| FE03 | Week 2 | 3 days | Frontend | Authenticated shell, dashboard, and profile editing. |
-| FE04 | Week 3 | 4 days | Frontend | Scholarship search, filters, cards, and detail pages. |
-| FE05 | Week 4 | 4 days | Frontend | Ranked matches with eligibility, score, gaps, and explanation UI. |
-| FE06 | Week 5 | 4 days | Frontend | Saved items, application tracking, documents, and deadlines. |
-| FE07 | Week 6 | 3 days | Frontend | Role-protected scholarship and ingestion administration. |
-| FE08 | Weeks 6–7 | 3 days | Frontend | Accessibility, responsive QA, performance, analytics, and UI tests. |
-| BE01 | Week 1 | 2 days | Backend | Correct, runnable FastAPI foundation. |
-| BE02 | Weeks 1–2 | 4 days | Backend | Migrations, JWT validation, authorization, and RLS. |
-| BE03 | Week 2 | 3 days | Backend | Profile and private document services. |
-| BE04 | Weeks 2–3 | 5 days | Backend | Scholarship catalog and idempotent ingestion pipeline. |
-| BE05 | Weeks 3–4 | 5 days | Backend | Deterministic, reproducible eligibility and scoring engine. |
-| BE06 | Weeks 4–5 | 5 days | Backend | pgvector retrieval and grounded Qwen explanations. |
-| BE07 | Weeks 5–6 | 5 days | Backend | Application workflow, jobs, and deadline notifications. |
-| BE08 | Week 6 | 3 days | Backend | Admin controls, monitoring, privacy, and operational hardening. |
-| BE09 | Week 7 | 3 days | Backend | CI, containerization, deployment, backup, and runbooks. |
-| IN01 | Weeks 7–8 | 10 elapsed days | Full team | Contract integration, complete journeys, security review, QA, and staged release. |
+| ID   | Development window |        Estimate | Owner     | Outcome                                                                               |
+| ---- | ------------------ | --------------: | --------- | ------------------------------------------------------------------------------------- |
+| P00  | Week 1             |   2 days shared | Full team | Runnable baseline, contracts, decision log, and quality gates.                        |
+| FE01 | Weeks 1–2          |          5 days | Frontend  | Original ScholarMatch landing page faithfully adapting the reference design language. |
+| FE02 | Week 2             |          3 days | Frontend  | Authentication and accessible student onboarding.                                     |
+| FE03 | Week 2             |          3 days | Frontend  | Authenticated shell, dashboard, and profile editing.                                  |
+| FE04 | Week 3             |          4 days | Frontend  | Scholarship search, filters, cards, and detail pages.                                 |
+| FE05 | Week 4             |          4 days | Frontend  | Ranked matches with eligibility, score, gaps, and explanation UI.                     |
+| FE06 | Week 5             |          4 days | Frontend  | Saved items, application tracking, documents, and deadlines.                          |
+| FE07 | Week 6             |          3 days | Frontend  | Role-protected scholarship and ingestion administration.                              |
+| FE08 | Weeks 6–7          |          3 days | Frontend  | Accessibility, responsive QA, performance, analytics, and UI tests.                   |
+| BE01 | Week 1             |          2 days | Backend   | Correct, runnable FastAPI foundation.                                                 |
+| BE02 | Weeks 1–2          |          4 days | Backend   | Migrations, JWT validation, authorization, and RLS.                                   |
+| BE03 | Week 2             |          3 days | Backend   | Profile and private document services.                                                |
+| BE04 | Weeks 2–3          |          5 days | Backend   | Scholarship catalog and idempotent ingestion pipeline.                                |
+| BE05 | Weeks 3–4          |          5 days | Backend   | Deterministic, reproducible eligibility and scoring engine.                           |
+| BE06 | Weeks 4–5          |          5 days | Backend   | pgvector retrieval and grounded Qwen explanations.                                    |
+| BE07 | Weeks 5–6          |          5 days | Backend   | Application workflow, jobs, and deadline notifications.                               |
+| BE08 | Week 6             |          3 days | Backend   | Admin controls, monitoring, privacy, and operational hardening.                       |
+| BE09 | Week 7             |          3 days | Backend   | CI, containerization, deployment, backup, and runbooks.                               |
+| IN01 | Weeks 7–8          | 10 elapsed days | Full team | Contract integration, complete journeys, security review, QA, and staged release.     |
 
 ## 4. Prompt P00 — Establish the product contract and engineering baseline
 
@@ -438,6 +438,226 @@ Reference fidelity review:
 - Preserve original ScholarMatch content and assets while correcting unintended visual drift.
 
 Deliver a short QA report listing viewport/browser coverage, accessibility findings, performance measurements, test results, accepted exceptions, and follow-up owners.
+```
+
+## 5.1 Frontend experience enhancement prompts
+
+Use the prompts below after FE01 when the first marketing-page implementation exists but still feels static, sparse, or incomplete. Run them in order. Each prompt must preserve truthful ScholarMatch content and adapt only the reference site's design language—not its copy, identity, screenshots, source code, or assets.
+
+### FE09 — Turn the marketing navigation into a complete interaction system
+
+**Estimate:** 1–2 frontend days
+**Dependencies:** FE01
+**Target:** Marketing refinement
+
+```text
+Upgrade the ScholarMatch marketing navigation from a row of decorative links into a fully functional, accessible navigation system.
+
+Inspect first:
+- Read frontend/AGENTS.md and the relevant bundled Next.js 16 documentation before editing framework code.
+- Review the existing routes, marketing sections, authentication routes, route guards, and current navigation tests.
+- Check every current href. Do not leave links pointing to "#", nonexistent pages, or inert buttons.
+
+Desktop navigation:
+- Keep the inset floating ivory header, fine ink border, compact height, and lavender primary CTA inspired by the supplied Wispr Flow references.
+- Add real Product, For Students, Resources, and About menus. Each trigger must open a purposeful mega-menu or compact dropdown containing a short description and valid destination for every item.
+- Product: How matching works, Explainable matches, Eligibility checks, Deadline tracking, and Document readiness.
+- For Students: Undergraduate, Postgraduate, International, STEM, Research, and Community opportunities.
+- Resources: Scholarship guide, Application checklist, Eligibility glossary, FAQ, and Contact/support.
+- About: Mission, How data is verified, Privacy approach, Accessibility, and Contact.
+- Make Sign in navigate to /sign-in and Find scholarships navigate to the correct onboarding or authenticated discovery route according to session state.
+- Add an active-route indicator and ensure logo activation returns to the homepage.
+- Support click, Enter, Space, Escape, outside-click dismissal, focus return, and sensible pointer hover behavior. Do not make hover the only way to open a menu.
+
+Mobile navigation:
+- Replace desktop menus with a labelled menu button and an animated full-width panel or sheet.
+- Use accordion groups for the same information architecture; do not hide important destinations on mobile.
+- Lock background scrolling while open, close on route change or Escape, and restore focus to the menu trigger.
+- Keep Sign in and Find scholarships visible as distinct actions.
+
+Implementation rules:
+- Prefer semantic nav, button, list, and link elements. Use ARIA only where native semantics are insufficient.
+- Model menu content as typed data shared by desktop, mobile, and footer navigation.
+- Use Motion for open/close, height, opacity, and active-indicator transitions. Motion must enhance state changes, not delay navigation.
+- Respect prefers-reduced-motion and keep all links immediately operable without animation.
+- If a destination page does not yet exist, create a useful content page or link to a real on-page section with a stable id. Never add dead routes just to fill a menu.
+
+Validation:
+- Add tests for keyboard traversal, Escape, outside click, focus restoration, mobile accordion behavior, active-route state, and session-aware CTA routing.
+- Test at 320px, 768px, and 1440px and confirm no menu is clipped by the viewport.
+- Run format check, lint, type-check, focused tests, and a production build.
+```
+
+### FE10 — Establish a Motion.dev and GSAP motion architecture
+
+**Estimate:** 1 frontend day
+**Dependencies:** FE09
+**Target:** Marketing refinement
+
+```text
+Create a deliberate motion system for the ScholarMatch marketing experience using Motion.dev and GSAP without turning the page into a collection of unrelated effects.
+
+Library setup:
+- Use the current Motion for React package and imports documented by motion.dev. If the project still imports from framer-motion, migrate intentionally to motion/react and remove the old dependency only after all imports and tests are updated.
+- Use gsap with @gsap/react for timeline orchestration and ScrollTrigger only where scroll progress genuinely communicates a sequence.
+- Register GSAP plugins once in a client-only module. Prevent server evaluation, hydration differences, duplicate timelines, and leaked animation contexts.
+
+Define reusable motion tokens:
+- Durations: instant feedback, standard transition, deliberate reveal, and storytelling sequence.
+- Easing: one expressive entrance curve, one standard UI curve, and one exit curve.
+- Distances, stagger intervals, spring settings, and opacity ranges.
+- A shared reduced-motion hook or policy used by both Motion and GSAP.
+
+Responsibility boundary:
+- Motion.dev owns menus, tabs, accordions, cards, layout transitions, hover/tap feedback, carousel state, and route-level presence.
+- GSAP owns the hero matching timeline, scroll-scrubbed eligibility pipeline, curved proof-band motion, and pinned feature storytelling only when pinning improves comprehension.
+- CSS owns simple color, border, shadow, and underline transitions.
+- Never animate the same property on the same element with more than one system.
+
+Motion principles:
+- Animate transform and opacity where possible. Avoid continuous layout-triggering animation.
+- Do not hijack scrolling, replace the cursor, autoplay audio, or make users wait for an intro.
+- Pause off-screen or document-hidden animations and lazy-load below-the-fold client code.
+- Under prefers-reduced-motion, render every final state immediately, disable autoplay and scrubbing, and retain all controls and content.
+- Use will-change only during an active animation and clean it up afterward.
+
+Validation:
+- Add reduced-motion tests and lifecycle tests proving GSAP contexts are reverted on unmount.
+- Verify animations do not duplicate under React Strict Mode.
+- Record before/after client bundle impact and remove unused animation code.
+- Run format check, lint, type-check, tests, production build, and the repository performance budget.
+```
+
+### FE11 — Build an animated, interactive hero matching demo
+
+**Estimate:** 1–2 frontend days
+**Dependencies:** FE10
+**Target:** Marketing refinement
+
+```text
+Rebuild the ScholarMatch hero so it immediately explains the product through interaction instead of functioning as a static headline and illustration.
+
+Content:
+- Keep the original ScholarMatch message: “Don’t hunt, just match.”
+- Explain in one concise sentence that a student profile becomes ranked scholarship matches with visible eligibility reasons.
+- Primary CTA: Find my scholarships. Secondary CTA: See how matching works.
+- Add a short trust line that makes no unverified numerical or partner claim.
+
+Interactive demo:
+- Create an original HTML/CSS product visualization with three profile facts, an eligibility-check stage, and three ranked scholarship cards.
+- Let users change one of three example profile scenarios: Undergraduate, Postgraduate, or International.
+- When the scenario changes, update facts, eligibility results, match reasons, and ranking. This must be real UI state, not a video or decorative animation.
+- Add Play/Pause and Replay controls. The demo must also be understandable when paused or when JavaScript animation is unavailable.
+- Use a GSAP timeline to move fact tokens through eligibility gates and reveal the ranked results. Use Motion layout transitions when cards reorder.
+- Give screen-reader users a concise live-region summary after the selected scenario changes; do not announce every animation frame.
+
+Visual direction:
+- Adapt the reference's oversized editorial serif, generous ivory negative space, outlined lavender CTA, curved transcription-like path, and large rounded dark demonstration frame.
+- Replace voice-wave imagery with an original “profile to match” path made from CSS/SVG geometry and ScholarMatch UI.
+- Ensure the hero has a complete, attractive static composition before animations initialize.
+
+Validation:
+- Test scenario switching, pause/replay, CTA routing, live-region updates, reduced motion, and repeated mounting.
+- Confirm the hero headline never clips and the demo never creates horizontal overflow from 320px through 1440px.
+- Do not use copied reference media, scholarship logos, fabricated match percentages, or invented award amounts.
+```
+
+### FE12 — Add substantive interactive content sections
+
+**Estimate:** 2 frontend days
+**Dependencies:** FE10–FE11
+**Target:** Marketing refinement
+
+```text
+Expand the ScholarMatch homepage into a useful product story. Every section must either teach the visitor something, demonstrate a real workflow, or help them take a next step.
+
+Build or deepen these sections:
+1. How it works: a three-step profile, verify, and match sequence with a GSAP scroll timeline on large screens and a normal stacked flow on small screens.
+2. Match anatomy: an interactive scholarship card whose Eligibility, Match reasons, Requirements, and Deadline tabs reveal substantive sample-safe content.
+3. Opportunity explorer: filter non-claim example categories by study level, destination type, funding type, and field. Clearly label examples and never present them as a live catalog unless backed by the API.
+4. Application readiness: a clickable checklist for eligibility evidence, essays, references, transcripts, and deadline planning. Persist progress only in local component state unless a signed-in API contract already exists.
+5. Use cases: functional tabs for Undergraduate, Postgraduate, International, STEM, Research, and Community. Each tab needs distinct copy, facts considered, example explanation, and CTA.
+6. FAQ: accessible accordions answering how ranking works, what “eligible” means, how data is verified, whether AI decides eligibility, privacy, costs, and how to report incorrect scholarship data.
+
+Content standards:
+- Write specific, plain-language copy. Avoid “revolutionary,” “guaranteed,” “best,” and unsupported speed or success claims.
+- Distinguish deterministic eligibility rules from relevance ranking and AI-generated explanations.
+- Explain uncertainty and encourage students to confirm requirements with the official scholarship provider.
+- Use approved data when available. Otherwise use visibly labelled examples with no real institution branding.
+
+Interaction and motion:
+- Give every tab, filter, checklist item, and accordion a visible state change and keyboard behavior.
+- Use Motion for selection and layout transitions and GSAP only for the explanatory step sequence.
+- Deep-link the major sections with stable ids matching navigation destinations.
+- Preserve content order and comprehension with CSS disabled, animation disabled, or reduced motion enabled.
+
+Validation:
+- Add component tests for all controls, URL/hash deep links, empty states, and reduced motion.
+- Confirm controls do not pretend to save, apply, or contact a provider when no backend action exists.
+- Run accessibility checks, format check, lint, type-check, tests, and production build.
+```
+
+### FE13 — Create resource and trust pages behind the navigation
+
+**Estimate:** 2 frontend days
+**Dependencies:** FE09
+**Target:** Marketing refinement
+
+```text
+Create enough real destination content that the marketing navigation and footer feel complete rather than decorative.
+
+Implement concise, useful pages or route groups for:
+- /how-it-works: profile inputs, eligibility checks, ranking, explanations, and student review.
+- /resources/scholarship-guide: a practical discovery-to-submission guide.
+- /resources/application-checklist: an interactive but local-only planning checklist unless authenticated persistence already exists.
+- /resources/eligibility-glossary: plain-language definitions for nationality, residency, study level, academic threshold, field restrictions, funding coverage, and closing dates.
+- /faq: product, data quality, matching, AI, privacy, accessibility, and support questions.
+- /about: mission, product principles, data-verification approach, and clear language about the project's current stage.
+- /contact: a validated contact form only if a real submission endpoint exists; otherwise provide honest configured contact details and do not render a fake submit button.
+- /accessibility and /privacy: accurate statements based on implemented behavior and agreed policy; do not invent compliance certifications.
+
+Requirements:
+- Reuse the editorial design system and shared navigation/footer.
+- Add meaningful metadata, canonical URLs, heading hierarchy, breadcrumbs where helpful, and internal links to the next logical action.
+- Use Server Components for static editorial content and Client Components only for genuine controls.
+- Add a reusable article layout, callout, definition list, steps, and related-resources component.
+- Keep reading widths comfortable and motion restrained; page content should not depend on animation.
+- Include route-level tests for valid links and a crawler-style test that fails on internal 404s.
+
+Definition of done:
+- Every marketing navigation and footer destination resolves, has substantive original content, and offers a relevant next step.
+- There are no empty shells, “coming soon” pages, dead CTAs, fake forms, or copied reference text.
+```
+
+### FE14 — Add non-static proof, stories, and conversion paths
+
+**Estimate:** 1–2 frontend days
+**Dependencies:** FE10, FE12–FE13
+**Target:** Marketing refinement
+
+```text
+Finish the lower homepage with credible, interactive proof and clear conversion paths without fabricating endorsements or outcomes.
+
+Proof band:
+- Build a continuously looping category ribbon inspired by the reference's moving proof bands, using labels such as Fully funded, Tuition support, Research, STEM, Leadership, Community, Postgraduate, and International study.
+- Treat these as browse categories, not claims about catalog size or availability.
+- Make every label a real link or filter action. Pause motion on hover, focus, reduced motion, and when the document is hidden.
+
+Student stories:
+- Create an accessible carousel data contract that accepts only approved stories.
+- If no approved stories exist, replace testimonials with “Example journeys” and label them as illustrative scenarios. Do not use invented names, headshots, quotations, institutions, or outcome statistics.
+- Provide Previous, Next, pause/play, slide count, and direct-selection controls. Autoplay must not be required to discover content.
+- Use Motion for slide transitions and drag gestures while preserving button and keyboard access.
+
+Conversion paths:
+- Add a large closing section, “Your next opportunity could already fit,” with session-aware actions for creating a profile, viewing matches, or returning to the dashboard.
+- Add contextual CTAs after How it works, Match anatomy, Resources, FAQ, and Stories instead of repeating the same button without context.
+- Track only approved, privacy-safe events such as CTA identifier and route. Never send profile facts, search terms, scholarship names tied to a user, document details, or form contents.
+
+Validation:
+- Test empty/one/many story states, autoplay pause rules, drag plus keyboard coexistence, session-aware CTAs, and reduced motion.
+- Confirm truthful labeling in development and production configurations.
+- Run format check, lint, type-check, tests, production build, accessibility checks, and the performance budget.
 ```
 
 ## 6. Backend prompts
@@ -797,16 +1017,16 @@ The MVP is complete only when:
 
 ## 9. Planning risks and decision deadlines
 
-| Decision or risk | Needed by | Impact if unresolved |
-| --- | --- | --- |
-| Production scholarship sources and usage rights | Before BE04 | Ingestion can use only fixtures/manual administration. |
-| Approved embedding provider/model and data region | Before BE06 | Semantic retrieval remains behind a disabled adapter. |
-| Email provider and sender verification | Before BE07 | Notifications remain test-only. |
-| Final ScholarMatch logo and original media direction | Before FE01 review | Typography-led placeholders remain in the UI. |
-| Approved testimonials/partners and evidence | Before FE01 production launch | Proof sections use categories or are hidden. |
-| Hosting regions and production domains | Before BE09 | CORS, redirect URLs, latency, and deployment cannot be finalized. |
-| Privacy/retention policy and sensitive profile fields | Before BE03 | Data collection must remain minimal and provisional. |
-| Match-weight review and golden evaluation set | Before BE05 acceptance | Scores cannot be responsibly promoted beyond internal testing. |
+| Decision or risk                                      | Needed by                     | Impact if unresolved                                              |
+| ----------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------- |
+| Production scholarship sources and usage rights       | Before BE04                   | Ingestion can use only fixtures/manual administration.            |
+| Approved embedding provider/model and data region     | Before BE06                   | Semantic retrieval remains behind a disabled adapter.             |
+| Email provider and sender verification                | Before BE07                   | Notifications remain test-only.                                   |
+| Final ScholarMatch logo and original media direction  | Before FE01 review            | Typography-led placeholders remain in the UI.                     |
+| Approved testimonials/partners and evidence           | Before FE01 production launch | Proof sections use categories or are hidden.                      |
+| Hosting regions and production domains                | Before BE09                   | CORS, redirect URLs, latency, and deployment cannot be finalized. |
+| Privacy/retention policy and sensitive profile fields | Before BE03                   | Data collection must remain minimal and provisional.              |
+| Match-weight review and golden evaluation set         | Before BE05 acceptance        | Scores cannot be responsibly promoted beyond internal testing.    |
 
 ## 10. Reference
 

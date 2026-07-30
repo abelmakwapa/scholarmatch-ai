@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 import { DataState } from "@/app/components/product/data-state";
+import { reportClientFault } from "@/app/lib/observability/client";
 
 export default function WorkspaceError({
   error,
@@ -12,8 +13,8 @@ export default function WorkspaceError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Keep private error details out of the UI while retaining diagnostics.
-    console.error(error);
+    void error;
+    reportClientFault("error_boundary");
   }, [error]);
 
   return (

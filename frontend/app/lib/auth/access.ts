@@ -22,3 +22,9 @@ export function canAccessStudentWorkspace(
 ): boolean {
   return workspaceRole(user) === "student";
 }
+
+export function canAccessAdminWorkspace(
+  user: Pick<User, "app_metadata">,
+): boolean {
+  return workspaceRole(user) === "admin";
+}

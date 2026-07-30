@@ -58,8 +58,24 @@ consumes those types.
 
 ## Quality gate
 
-`npm run quality` runs formatting, lint, type-check, tests, and a production
-build — the same checks CI enforces.
+`npm run quality` runs formatting, lint, type-check, component tests, a
+production build, asset budgets, and the Chromium browser suite. Run the
+cross-browser suite after installing Playwright browsers:
+
+```bash
+npx playwright install chromium firefox webkit
+npm run test:e2e
+```
+
+Build and route limits are checked by `npm run performance:budget` against
+`performance-budgets.json`. Browser measurements use a dedicated port so the
+suite fails instead of attaching to an unrelated local application.
+
+Operational reporting is disabled unless
+`NEXT_PUBLIC_OBSERVABILITY_ENDPOINT` is a same-origin path. The client permits
+only aggregate Web Vitals and sanitized fault counts, honors Do Not Track and
+Global Privacy Control, and never sends paths, queries, profile answers,
+document data, tokens, error messages, or AI explanations.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load fonts.
 

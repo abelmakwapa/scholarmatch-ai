@@ -41,4 +41,39 @@ def test_required_resource_paths_are_declared() -> None:
         "/applications/{application_id}/reminder",
         "/admin/ingestion-runs",
         "/admin/ingestion-runs/{run_id}",
+        "/admin/ingestion-runs/{run_id}/retry",
+        "/admin/scholarships",
+        "/admin/scholarships/{scholarship_id}",
+        "/admin/scholarships/{scholarship_id}/lifecycle",
+        "/admin/scholarships/{scholarship_id}/requirements",
+        "/admin/scholarships/bulk-preview",
+        "/admin/scholarships/bulk-action",
+        "/admin/scholarships/bulk-actions/{operation_id}/undo",
+        "/admin/duplicates",
+        "/admin/duplicates/{duplicate_id}/merge",
+        "/admin/verification-queue",
+        "/admin/verification-queue/{scholarship_id}/verify",
+        "/admin/audit-events",
     } <= paths.keys()
+
+
+def test_every_admin_operation_declares_role_failure_responses() -> None:
+    contract = yaml.safe_load(CONTRACT_PATH.read_text(encoding="utf-8"))
+    for path, path_item in contract["paths"].items():
+        if not path.startswith("/admin/"):
+            continue
+        for method in {"get", "post", "put", "patch", "delete"} & path_item.keys():
+            responses = path_item[method]["responses"]
+            assert "401" in responses, f"{method.upper()} {path} must declare 401"
+            assert "403" in responses, f"{method.upper()} {path} must declare 403"
+
+
+def test_admin_bulk_and_source_guardrails_are_bounded_in_contract() -> None:
+    contract = yaml.safe_load(CONTRACT_PATH.read_text(encoding="utf-8"))
+    schemas = contract["components"]["schemas"]
+
+    assert (
+        schemas["AdminBulkActionPreviewRequest"]["properties"]["scholarship_ids"]["maxItems"] == 50
+    )
+    assert schemas["AdminScholarshipWrite"]["properties"]["source_url"]["pattern"] == "^https://"
+    assert schemas["AdminAuditEvent"]["additionalProperties"] is False

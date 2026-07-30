@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { AppNavigation } from "@/app/components/product/app-navigation";
+import { OfflineNotice } from "@/app/components/product/offline-notice";
 import {
   requireStudentSession,
   sessionDisplayName,
@@ -23,6 +24,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         email={user.email ?? null}
       />
       <main className="workspace-main" id="workspace-main">
+        <OfflineNotice />
         {children}
       </main>
     </div>

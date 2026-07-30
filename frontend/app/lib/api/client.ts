@@ -43,6 +43,42 @@ export type ScholarshipReportCreate =
 export type ScholarshipReportResponse =
   components["schemas"]["ScholarshipReportResponse"];
 export type ApplicationCreate = components["schemas"]["ApplicationCreate"];
+export type AdminScholarshipPage =
+  components["schemas"]["AdminScholarshipPage"];
+export type AdminScholarshipResponse =
+  components["schemas"]["AdminScholarshipResponse"];
+export type AdminScholarshipWrite =
+  components["schemas"]["AdminScholarshipWrite"];
+export type AdminScholarshipPatch =
+  components["schemas"]["AdminScholarshipPatch"];
+export type AdminLifecycleTransition =
+  components["schemas"]["AdminLifecycleTransition"];
+export type AdminRequirementSetWrite =
+  components["schemas"]["AdminRequirementSetWrite"];
+export type AdminBulkActionPreviewRequest =
+  components["schemas"]["AdminBulkActionPreviewRequest"];
+export type AdminBulkActionPreviewResponse =
+  components["schemas"]["AdminBulkActionPreviewResponse"];
+export type AdminBulkActionResponse =
+  components["schemas"]["AdminBulkActionResponse"];
+export type AdminBulkUndoResponse =
+  components["schemas"]["AdminBulkUndoResponse"];
+export type AdminDuplicatePage = components["schemas"]["AdminDuplicatePage"];
+export type AdminDuplicateMergeRequest =
+  components["schemas"]["AdminDuplicateMergeRequest"];
+export type AdminDuplicateMergeResponse =
+  components["schemas"]["AdminDuplicateMergeResponse"];
+export type AdminVerificationPage =
+  components["schemas"]["AdminVerificationPage"];
+export type AdminVerificationItem =
+  components["schemas"]["AdminVerificationItem"];
+export type AdminVerificationWrite =
+  components["schemas"]["AdminVerificationWrite"];
+export type AdminAuditEventPage = components["schemas"]["AdminAuditEventPage"];
+export type IngestionRunCreate = components["schemas"]["IngestionRunCreate"];
+export type IngestionRunResponse =
+  components["schemas"]["IngestionRunResponse"];
+export type IngestionRunPage = components["schemas"]["IngestionRunPage"];
 
 /** Resolves the current Supabase access token, or null when signed out. */
 export type AccessTokenProvider = () => Promise<string | null>;
@@ -434,6 +470,211 @@ export class ApiClient {
       body,
       idempotencyKey,
       signal,
+    });
+  }
+
+  async listAdminScholarships(
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<AdminScholarshipPage> {
+    return this.request<AdminScholarshipPage>({
+      method: "GET",
+      path: pagePath("/admin/scholarships", options),
+      signal: options.signal,
+    });
+  }
+
+  async getAdminScholarship(
+    scholarshipId: string,
+    signal?: AbortSignal,
+  ): Promise<AdminScholarshipResponse> {
+    return this.request<AdminScholarshipResponse>({
+      method: "GET",
+      path: `/admin/scholarships/${encodeURIComponent(scholarshipId)}`,
+      signal,
+    });
+  }
+
+  async createAdminScholarship(
+    body: AdminScholarshipWrite,
+    idempotencyKey: string,
+  ): Promise<AdminScholarshipResponse> {
+    return this.request<AdminScholarshipResponse>({
+      method: "POST",
+      path: "/admin/scholarships",
+      body,
+      idempotencyKey,
+    });
+  }
+
+  async updateAdminScholarship(
+    scholarshipId: string,
+    body: AdminScholarshipPatch,
+    idempotencyKey: string,
+  ): Promise<AdminScholarshipResponse> {
+    return this.request<AdminScholarshipResponse>({
+      method: "PATCH",
+      path: `/admin/scholarships/${encodeURIComponent(scholarshipId)}`,
+      body,
+      idempotencyKey,
+    });
+  }
+
+  async transitionAdminScholarship(
+    scholarshipId: string,
+    body: AdminLifecycleTransition,
+    idempotencyKey: string,
+  ): Promise<AdminScholarshipResponse> {
+    return this.request<AdminScholarshipResponse>({
+      method: "POST",
+      path: `/admin/scholarships/${encodeURIComponent(scholarshipId)}/lifecycle`,
+      body,
+      idempotencyKey,
+    });
+  }
+
+  async replaceAdminScholarshipRequirements(
+    scholarshipId: string,
+    body: AdminRequirementSetWrite,
+    idempotencyKey: string,
+  ): Promise<AdminScholarshipResponse> {
+    return this.request<AdminScholarshipResponse>({
+      method: "PUT",
+      path: `/admin/scholarships/${encodeURIComponent(scholarshipId)}/requirements`,
+      body,
+      idempotencyKey,
+    });
+  }
+
+  async previewAdminBulkAction(
+    body: AdminBulkActionPreviewRequest,
+  ): Promise<AdminBulkActionPreviewResponse> {
+    return this.request<AdminBulkActionPreviewResponse>({
+      method: "POST",
+      path: "/admin/scholarships/bulk-preview",
+      body,
+    });
+  }
+
+  async applyAdminBulkAction(
+    previewToken: string,
+    idempotencyKey: string,
+  ): Promise<AdminBulkActionResponse> {
+    return this.request<AdminBulkActionResponse>({
+      method: "POST",
+      path: "/admin/scholarships/bulk-action",
+      body: { preview_token: previewToken },
+      idempotencyKey,
+    });
+  }
+
+  async undoAdminBulkAction(
+    operationId: string,
+    idempotencyKey: string,
+  ): Promise<AdminBulkUndoResponse> {
+    return this.request<AdminBulkUndoResponse>({
+      method: "POST",
+      path: `/admin/scholarships/bulk-actions/${encodeURIComponent(operationId)}/undo`,
+      idempotencyKey,
+    });
+  }
+
+  async listAdminDuplicateGroups(
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<AdminDuplicatePage> {
+    return this.request<AdminDuplicatePage>({
+      method: "GET",
+      path: pagePath("/admin/duplicates", options),
+      signal: options.signal,
+    });
+  }
+
+  async mergeAdminDuplicateGroup(
+    duplicateId: string,
+    body: AdminDuplicateMergeRequest,
+    idempotencyKey: string,
+  ): Promise<AdminDuplicateMergeResponse> {
+    return this.request<AdminDuplicateMergeResponse>({
+      method: "POST",
+      path: `/admin/duplicates/${encodeURIComponent(duplicateId)}/merge`,
+      body,
+      idempotencyKey,
+    });
+  }
+
+  async listAdminVerificationQueue(
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<AdminVerificationPage> {
+    return this.request<AdminVerificationPage>({
+      method: "GET",
+      path: pagePath("/admin/verification-queue", options),
+      signal: options.signal,
+    });
+  }
+
+  async verifyAdminScholarship(
+    scholarshipId: string,
+    body: AdminVerificationWrite,
+    idempotencyKey: string,
+  ): Promise<AdminVerificationItem> {
+    return this.request<AdminVerificationItem>({
+      method: "POST",
+      path: `/admin/verification-queue/${encodeURIComponent(scholarshipId)}/verify`,
+      body,
+      idempotencyKey,
+    });
+  }
+
+  async listAdminAuditEvents(
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<AdminAuditEventPage> {
+    return this.request<AdminAuditEventPage>({
+      method: "GET",
+      path: pagePath("/admin/audit-events", options),
+      signal: options.signal,
+    });
+  }
+
+  async listIngestionRuns(
+    options: { limit?: number; cursor?: string; signal?: AbortSignal } = {},
+  ): Promise<IngestionRunPage> {
+    return this.request<IngestionRunPage>({
+      method: "GET",
+      path: pagePath("/admin/ingestion-runs", options),
+      signal: options.signal,
+    });
+  }
+
+  async getIngestionRun(
+    runId: string,
+    signal?: AbortSignal,
+  ): Promise<IngestionRunResponse> {
+    return this.request<IngestionRunResponse>({
+      method: "GET",
+      path: `/admin/ingestion-runs/${encodeURIComponent(runId)}`,
+      signal,
+    });
+  }
+
+  async createIngestionRun(
+    body: IngestionRunCreate,
+    idempotencyKey: string,
+  ): Promise<IngestionRunResponse> {
+    return this.request<IngestionRunResponse>({
+      method: "POST",
+      path: "/admin/ingestion-runs",
+      body,
+      idempotencyKey,
+    });
+  }
+
+  async retryIngestionRun(
+    runId: string,
+    idempotencyKey: string,
+  ): Promise<IngestionRunResponse> {
+    return this.request<IngestionRunResponse>({
+      method: "POST",
+      path: `/admin/ingestion-runs/${encodeURIComponent(runId)}/retry`,
+      idempotencyKey,
     });
   }
 }

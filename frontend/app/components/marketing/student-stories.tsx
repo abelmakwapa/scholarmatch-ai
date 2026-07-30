@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowLeft, ArrowRight, MessageCircleMore } from "lucide-react";
 import { useState } from "react";
 
@@ -12,7 +11,6 @@ type StudentStoriesProps = {
 
 export function StudentStories({ stories }: StudentStoriesProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const prefersReducedMotion = useReducedMotion();
 
   if (stories.length === 0) {
     return (
@@ -42,25 +40,13 @@ export function StudentStories({ stories }: StudentStoriesProps) {
         aria-live="polite"
         className="stories-carousel__viewport"
       >
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.figure
-            animate={{ opacity: 1, x: 0 }}
-            exit={
-              prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: -24 }
-            }
-            initial={
-              prefersReducedMotion ? { opacity: 0 } : { opacity: 0, x: 24 }
-            }
-            key={activeStory.id}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.25 }}
-          >
-            <blockquote>“{activeStory.quote}”</blockquote>
-            <figcaption>
-              <strong>{activeStory.name}</strong>
-              <span>{activeStory.context}</span>
-            </figcaption>
-          </motion.figure>
-        </AnimatePresence>
+        <figure key={activeStory.id}>
+          <blockquote>“{activeStory.quote}”</blockquote>
+          <figcaption>
+            <strong>{activeStory.name}</strong>
+            <span>{activeStory.context}</span>
+          </figcaption>
+        </figure>
       </div>
 
       <div className="stories-carousel__controls">

@@ -30,6 +30,17 @@ test("the shared API contract is versioned and covers the baseline resources", a
     "/applications/{application_id}/checklist/{checklist_item_id}:",
     "/applications/{application_id}/reminder:",
     "/admin/ingestion-runs:",
+    "/admin/ingestion-runs/{run_id}/retry:",
+    "/admin/scholarships:",
+    "/admin/scholarships/{scholarship_id}/lifecycle:",
+    "/admin/scholarships/{scholarship_id}/requirements:",
+    "/admin/scholarships/bulk-preview:",
+    "/admin/scholarships/bulk-action:",
+    "/admin/scholarships/bulk-actions/{operation_id}/undo:",
+    "/admin/duplicates:",
+    "/admin/duplicates/{duplicate_id}/merge:",
+    "/admin/verification-queue:",
+    "/admin/audit-events:",
   ]) {
     assert.ok(contract.includes(path), `missing ${path}`);
   }

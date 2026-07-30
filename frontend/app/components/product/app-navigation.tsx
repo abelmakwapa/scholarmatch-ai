@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -36,14 +36,31 @@ export function AppNavigation({ displayName, email }: AppNavigationProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const navigationId = useId();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  const closeMenu = (restoreFocus = false) => {
+    setOpen(false);
+    if (restoreFocus)
+      requestAnimationFrame(() => menuButtonRef.current?.focus());
+  };
 
   useEffect(() => {
     if (!open) return;
     const close = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+      if (event.key === "Escape") {
+        setOpen(false);
+        requestAnimationFrame(() => menuButtonRef.current?.focus());
+      }
     };
+    const main = document.getElementById("workspace-main");
+    if (main) main.inert = true;
+    closeButtonRef.current?.focus();
     document.addEventListener("keydown", close);
-    return () => document.removeEventListener("keydown", close);
+    return () => {
+      if (main) main.inert = false;
+      document.removeEventListener("keydown", close);
+    };
   }, [open]);
 
   return (
@@ -57,6 +74,7 @@ export function AppNavigation({ displayName, email }: AppNavigationProps) {
           aria-expanded={open}
           aria-label={open ? "Close application menu" : "Open application menu"}
           onClick={() => setOpen((current) => !current)}
+          ref={menuButtonRef}
         >
           {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
         </button>
@@ -73,7 +91,8 @@ export function AppNavigation({ displayName, email }: AppNavigationProps) {
             type="button"
             className="workspace-sidebar__close"
             aria-label="Close application menu"
-            onClick={() => setOpen(false)}
+            onClick={() => closeMenu(true)}
+            ref={closeButtonRef}
           >
             <X aria-hidden="true" size={20} />
           </button>
@@ -90,7 +109,7 @@ export function AppNavigation({ displayName, email }: AppNavigationProps) {
                   <Link
                     href={href}
                     aria-current={active ? "page" : undefined}
-                    onClick={() => setOpen(false)}
+                    onClick={() => closeMenu()}
                   >
                     <Icon aria-hidden="true" size={18} strokeWidth={1.9} />
                     <span>{label}</span>
@@ -121,7 +140,7 @@ export function AppNavigation({ displayName, email }: AppNavigationProps) {
           className="workspace-scrim"
           type="button"
           aria-label="Close application menu"
-          onClick={() => setOpen(false)}
+          onClick={() => closeMenu(true)}
         />
       ) : null}
     </>

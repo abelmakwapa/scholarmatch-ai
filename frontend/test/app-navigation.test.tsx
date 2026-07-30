@@ -24,6 +24,9 @@ describe("AppNavigation", () => {
       "aria-current",
       "page",
     );
+    expect(
+      screen.queryByRole("link", { name: "Audit history" }),
+    ).not.toBeInTheDocument();
   });
 
   test("opens and closes the mobile menu with keyboard controls", async () => {

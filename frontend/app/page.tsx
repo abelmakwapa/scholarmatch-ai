@@ -1,5 +1,6 @@
 import { Footer } from "./components/marketing/footer";
 import { Navigation } from "./components/marketing/navigation";
+import { getOptionalAuthenticatedSession } from "./lib/auth/server-session";
 import {
   ClosingSection,
   FeaturesSection,
@@ -11,8 +12,9 @@ import {
   UseCasesSection,
 } from "./components/marketing/sections";
 
-export default function Home() {
+export default async function Home() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const session = await getOptionalAuthenticatedSession();
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
@@ -29,7 +31,7 @@ export default function Home() {
       <a className="skip-link" href="#main-content">
         Skip to main content
       </a>
-      <Navigation />
+      <Navigation authenticated={Boolean(session)} />
       <main id="main-content">
         <HeroSection />
         <ProductDemoSection />
