@@ -1,5 +1,7 @@
 import { Check, Sparkles } from "lucide-react";
 
+import { HeroMotionLoader } from "./motion/hero-motion-loader";
+
 const facts = ["Study level", "Academic record", "Interests"];
 
 export function HeroMatcher() {
@@ -7,6 +9,7 @@ export function HeroMatcher() {
     <div
       aria-label="Illustration of profile facts becoming an explainable scholarship match"
       className="hero-matcher"
+      data-hero-motion
       data-motion="system"
       data-testid="hero-matcher"
       role="img"
@@ -53,6 +56,7 @@ export function HeroMatcher() {
           </span>
         ))}
       </div>
+      <HeroMotionLoader />
     </div>
   );
 }

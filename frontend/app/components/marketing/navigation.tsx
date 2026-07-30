@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { ChevronDown, Menu, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -19,6 +19,8 @@ import {
   marketingNavGroups,
   type MarketingNavGroup,
 } from "./navigation-data";
+import { motionDistances, motionTransitions } from "@/app/lib/motion/tokens";
+import { useMotionPolicy } from "@/app/lib/motion/use-motion-policy";
 
 type GroupId = MarketingNavGroup["id"];
 
@@ -31,7 +33,7 @@ const focusableSelector =
 
 export function Navigation({ authenticated = false }: NavigationProps) {
   const pathname = usePathname();
-  const reduceMotion = useReducedMotion();
+  const { reduceMotion } = useMotionPolicy();
   const [desktopOpen, setDesktopOpen] = useState<GroupId | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileGroup, setMobileGroup] = useState<GroupId | null>(null);
@@ -43,7 +45,12 @@ export function Navigation({ authenticated = false }: NavigationProps) {
   const desktopTriggerRefs = useRef<
     Partial<Record<GroupId, HTMLButtonElement | null>>
   >({});
-  const duration = reduceMotion ? 0 : 0.2;
+  const standardTransition = reduceMotion
+    ? { duration: 0 }
+    : motionTransitions.standard;
+  const exitTransition = reduceMotion
+    ? { duration: 0 }
+    : motionTransitions.exit;
   const findScholarshipsHref = authenticated
     ? "/matches"
     : "/sign-up?next=/onboarding";
@@ -225,7 +232,7 @@ export function Navigation({ authenticated = false }: NavigationProps) {
                   handleDesktopPointerEnter(event, group.id)
                 }
               >
-                <button
+                <motion.button
                   aria-controls={`desktop-panel-${group.id}`}
                   aria-expanded={expanded}
                   className="site-nav__trigger"
@@ -236,7 +243,9 @@ export function Navigation({ authenticated = false }: NavigationProps) {
                   ref={(node) => {
                     desktopTriggerRefs.current[group.id] = node;
                   }}
+                  transition={motionTransitions.instant}
                   type="button"
+                  whileTap={reduceMotion ? undefined : { scale: 0.97 }}
                 >
                   {group.label}
                   <ChevronDown aria-hidden="true" size={14} strokeWidth={2} />
@@ -244,19 +253,23 @@ export function Navigation({ authenticated = false }: NavigationProps) {
                     <motion.span
                       className="site-nav__active-indicator"
                       layoutId="marketing-nav-active"
+                      transition={standardTransition}
                     />
                   ) : null}
-                </button>
+                </motion.button>
 
                 <AnimatePresence>
                   {expanded ? (
                     <motion.div
                       animate={{ opacity: 1, y: 0 }}
                       className="site-nav__dropdown"
-                      exit={{ opacity: 0, y: -6 }}
+                      exit={{ opacity: 0, y: -motionDistances.small }}
                       id={`desktop-panel-${group.id}`}
-                      initial={{ opacity: 0, y: -6 }}
-                      transition={{ duration }}
+                      initial={{
+                        opacity: 0,
+                        y: -motionDistances.small,
+                      }}
+                      transition={standardTransition}
                     >
                       <div className="site-nav__dropdown-intro">
                         <span>{group.label}</span>
@@ -325,7 +338,7 @@ export function Navigation({ authenticated = false }: NavigationProps) {
                     initial={{ opacity: 0 }}
                     onClick={() => closeMobile(true)}
                     tabIndex={-1}
-                    transition={{ duration }}
+                    transition={exitTransition}
                     type="button"
                   />
                   <motion.div
@@ -333,12 +346,12 @@ export function Navigation({ authenticated = false }: NavigationProps) {
                     aria-label="Mobile navigation"
                     aria-modal="true"
                     className="mobile-navigation"
-                    exit={{ opacity: 0, x: 24 }}
+                    exit={{ opacity: 0, x: motionDistances.medium }}
                     id="mobile-navigation"
-                    initial={{ opacity: 0, x: 24 }}
+                    initial={{ opacity: 0, x: motionDistances.medium }}
                     ref={mobilePanelRef}
                     role="dialog"
-                    transition={{ duration }}
+                    transition={standardTransition}
                   >
                     <div className="mobile-navigation__header">
                       <div>
@@ -346,6 +359,8 @@ export function Navigation({ authenticated = false }: NavigationProps) {
                         <p>Find the right information for your next step.</p>
                       </div>
                       <button
+                        aria-controls="mobile-navigation"
+                        aria-expanded={mobileOpen}
                         aria-label="Close navigation menu"
                         className="site-nav__menu-button"
                         onClick={() => closeMobile(true)}
@@ -364,7 +379,7 @@ export function Navigation({ authenticated = false }: NavigationProps) {
                             className="mobile-navigation__group"
                             key={group.id}
                           >
-                            <button
+                            <motion.button
                               aria-controls={`mobile-panel-${group.id}`}
                               aria-expanded={expanded}
                               onClick={() =>
@@ -372,11 +387,15 @@ export function Navigation({ authenticated = false }: NavigationProps) {
                                   current === group.id ? null : group.id,
                                 )
                               }
+                              transition={motionTransitions.instant}
                               type="button"
+                              whileTap={
+                                reduceMotion ? undefined : { scale: 0.985 }
+                              }
                             >
                               <span>{group.label}</span>
                               <ChevronDown aria-hidden="true" size={18} />
-                            </button>
+                            </motion.button>
                             <AnimatePresence initial={false}>
                               {expanded ? (
                                 <motion.div
@@ -385,7 +404,7 @@ export function Navigation({ authenticated = false }: NavigationProps) {
                                   exit={{ height: 0, opacity: 0 }}
                                   id={`mobile-panel-${group.id}`}
                                   initial={{ height: 0, opacity: 0 }}
-                                  transition={{ duration }}
+                                  transition={standardTransition}
                                 >
                                   <p>{group.description}</p>
                                   <ul>

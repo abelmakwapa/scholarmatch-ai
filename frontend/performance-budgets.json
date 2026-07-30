@@ -2,29 +2,29 @@
   "buildAssets": {
     "totalJsBytes": 1700000,
     "maxJsChunkBytes": 270000,
-    "totalCssBytes": 105000,
+    "totalCssBytes": 112000,
     "totalFontBytes": 300000
   },
   "routes": {
     "/": {
       "manifest": ".next/server/app/page_client-reference-manifest.js",
-      "jsBytes": 100000,
-      "cssBytes": 105000
+      "jsBytes": 255000,
+      "cssBytes": 112000
     },
     "/sign-in": {
       "manifest": ".next/server/app/(auth)/sign-in/page_client-reference-manifest.js",
       "jsBytes": 365000,
-      "cssBytes": 105000
+      "cssBytes": 112000
     },
     "/dashboard": {
       "manifest": ".next/server/app/(app)/dashboard/page_client-reference-manifest.js",
       "jsBytes": 110000,
-      "cssBytes": 105000
+      "cssBytes": 112000
     },
     "/admin": {
       "manifest": ".next/server/app/(admin)/admin/page_client-reference-manifest.js",
       "jsBytes": 105000,
-      "cssBytes": 105000
+      "cssBytes": 112000
     }
   },
   "webVitals": {

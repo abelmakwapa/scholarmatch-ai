@@ -128,6 +128,45 @@ test("reflows without page overflow at a 200% zoom equivalent", async ({
   expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client);
 });
 
+test("marketing navigation stays inside 320, 768, and 1440 pixel viewports", async ({
+  page,
+}) => {
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/");
+
+    if (width < 1000) {
+      await page.getByRole("button", { name: "Open navigation menu" }).click();
+      const panel = page.getByRole("dialog", { name: "Mobile navigation" });
+      await expect(panel).toBeVisible();
+      await expect
+        .poll(async () => {
+          const bounds = await panel.boundingBox();
+          return bounds ? Math.ceil(bounds.x + bounds.width) : Infinity;
+        })
+        .toBeLessThanOrEqual(width);
+      const settledBounds = await panel.boundingBox();
+      expect(settledBounds).not.toBeNull();
+      expect(settledBounds!.x).toBeGreaterThanOrEqual(0);
+      await page.getByRole("button", { name: "Close navigation menu" }).click();
+    } else {
+      await page.getByRole("button", { name: "About" }).click();
+      const panel = page.locator("#desktop-panel-about");
+      await expect(panel).toBeVisible();
+      const bounds = await panel.boundingBox();
+      expect(bounds).not.toBeNull();
+      expect(bounds!.x).toBeGreaterThanOrEqual(0);
+      expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+    }
+
+    const dimensions = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client);
+  }
+});
+
 test("reduced motion keeps all marketing content available", async ({
   page,
 }) => {
@@ -136,6 +175,10 @@ test("reduced motion keeps all marketing content available", async ({
   await expect(page.getByTestId("hero-matcher")).toHaveAttribute(
     "data-motion",
     "system",
+  );
+  await expect(page.getByTestId("hero-motion-runtime")).toHaveAttribute(
+    "data-motion",
+    "reduced",
   );
   const animation = await page
     .locator(".hero-matcher__rail > i")

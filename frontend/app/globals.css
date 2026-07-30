@@ -18,6 +18,12 @@
   --section-inline: clamp(1rem, 4vw, 4rem);
   --section-block: clamp(5rem, 10vw, 10rem);
   --max-width: 1280px;
+  --motion-instant: 120ms;
+  --motion-standard: 220ms;
+  --motion-reveal: 550ms;
+  --motion-ease-entrance: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --motion-ease-exit: cubic-bezier(0.4, 0, 1, 1);
 }
 
 * {
@@ -275,7 +281,7 @@ h3 {
 }
 
 .site-nav__trigger svg {
-  transition: transform 180ms ease;
+  transition: transform var(--motion-standard) var(--motion-ease-standard);
 }
 
 .site-nav__trigger[aria-expanded="true"] {
@@ -301,7 +307,7 @@ h3 {
 .site-nav__signin::after {
   transform: scaleX(0);
   transform-origin: right;
-  transition: transform 180ms ease;
+  transition: transform var(--motion-standard) var(--motion-ease-standard);
 }
 
 .site-nav__signin:hover::after {
@@ -587,7 +593,6 @@ h3 {
 
 .hero-matcher__result {
   background: var(--accent);
-  animation: matcher-result-pulse 4.4s ease-in-out infinite;
 }
 
 .hero-matcher__result-icon {
@@ -616,7 +621,6 @@ h3 {
   border-radius: 10px;
   background: var(--accent);
   transform: translateY(-50%);
-  animation: matcher-rail 5.2s ease-in-out infinite;
 }
 
 .hero-matcher__facts {
@@ -633,52 +637,6 @@ h3 {
   background: var(--canvas);
   font-size: 0.7rem;
   font-weight: 690;
-  animation: matcher-fact-down 3s ease-in-out infinite;
-}
-
-.hero-matcher__facts span[data-direction="up"] {
-  animation-name: matcher-fact-up;
-  animation-duration: 3.4s;
-}
-
-@keyframes matcher-rail {
-  0%,
-  100% {
-    left: 0;
-  }
-  50% {
-    left: calc(100% - 34px);
-  }
-}
-
-@keyframes matcher-result-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(240, 215, 255, 0);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(240, 215, 255, 0.45);
-  }
-}
-
-@keyframes matcher-fact-down {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(5px);
-  }
-}
-
-@keyframes matcher-fact-up {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
 }
 
 /* Product demo */
@@ -935,12 +893,12 @@ h3 {
 .category-marquee {
   overflow: hidden;
   border-block: 1px solid rgba(255, 255, 235, 0.32);
+  border-radius: 50% 50% 0 0 / 12px 12px 0 0;
 }
 
 .category-marquee__track {
   display: flex;
   width: max-content;
-  animation: marquee 34s linear infinite;
 }
 
 .category-marquee ul {
@@ -968,12 +926,6 @@ h3 {
   font-family: var(--font-body), Arial, sans-serif;
   font-size: 0.62rem;
   font-weight: 750;
-}
-
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
-  }
 }
 
 /* Outcome */
@@ -1130,6 +1082,7 @@ h3 {
 }
 
 .use-case-tabs__list button {
+  position: relative;
   flex: 0 0 auto;
   padding: 0.7rem 0.95rem;
   border: 1px solid var(--line-light);
@@ -1139,6 +1092,16 @@ h3 {
   cursor: pointer;
   font-size: 0.78rem;
   font-weight: 680;
+}
+
+.use-case-tabs__indicator {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 4px;
+  left: 0.9rem;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
 .use-case-tabs__list button[aria-selected="true"] {
@@ -1161,21 +1124,6 @@ h3 {
   border: 1px solid var(--line-light);
   border-radius: clamp(24px, 4vw, 38px);
   background: #22221f;
-}
-
-.use-case-panel[data-animate="true"] {
-  animation: use-case-enter 280ms ease-out;
-}
-
-@keyframes use-case-enter {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .use-case-panel__icon {
@@ -1407,18 +1355,6 @@ h3 {
 
 .stories-carousel figure {
   margin: 0;
-  animation: story-enter 250ms ease-out;
-}
-
-@keyframes story-enter {
-  from {
-    opacity: 0;
-    transform: translateX(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
 }
 
 .stories-carousel blockquote {
@@ -1860,7 +1796,7 @@ h3 {
   }
 
   .mobile-navigation__group > button svg {
-    transition: transform 180ms ease;
+    transition: transform var(--motion-standard) var(--motion-ease-standard);
   }
 
   .mobile-navigation__group > button[aria-expanded="true"] svg {

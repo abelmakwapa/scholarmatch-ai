@@ -59,6 +59,7 @@ export function ProductDemoSection() {
     <section
       aria-labelledby="product-demo-heading"
       className="product-demo-section"
+      data-story-motion-root
       id="product"
     >
       <div className="section-shell">
@@ -74,7 +75,11 @@ export function ProductDemoSection() {
           }
         />
 
-        <div className="matching-workbench" id="how-it-works">
+        <div
+          className="matching-workbench"
+          data-eligibility-pipeline
+          id="how-it-works"
+        >
           <div className="matching-workbench__topbar">
             <div>
               <span className="status-dot" />
@@ -192,7 +197,11 @@ export function ProofBand() {
         <p className="eyebrow">Built to explore many paths</p>
         <h2 id="category-heading">Start with your goals, not a search box.</h2>
       </div>
-      <div className="category-marquee" data-testid="category-marquee">
+      <div
+        className="category-marquee"
+        data-proof-motion
+        data-testid="category-marquee"
+      >
         <div className="category-marquee__track">
           {[0, 1].map((setIndex) => (
             <ul aria-hidden={setIndex === 1} key={setIndex}>
@@ -312,6 +321,7 @@ export function FeaturesSection() {
     <section
       aria-labelledby="features-heading"
       className="features-section"
+      data-feature-story
       id="resources"
     >
       <div className="section-shell">

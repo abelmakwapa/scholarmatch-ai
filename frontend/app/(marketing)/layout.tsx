@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Footer } from "@/app/components/marketing/footer";
+import { MarketingPagePresence } from "@/app/components/marketing/marketing-page-presence";
 import { Navigation } from "@/app/components/marketing/navigation";
 import { getOptionalAuthenticatedSession } from "@/app/lib/auth/server-session";
 
@@ -17,9 +18,11 @@ export default async function MarketingLayout({
         Skip to main content
       </a>
       <Navigation authenticated={Boolean(session)} />
-      <main className="marketing-content-main" id="main-content">
-        {children}
-      </main>
+      <MarketingPagePresence>
+        <main className="marketing-content-main" id="main-content">
+          {children}
+        </main>
+      </MarketingPagePresence>
       <Footer />
     </>
   );

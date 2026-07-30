@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { expect, test, vi } from "vitest";
 
-vi.mock("framer-motion", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("framer-motion")>();
+vi.mock("motion/react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("motion/react")>();
   return { ...actual, useReducedMotion: () => true };
 });
 
