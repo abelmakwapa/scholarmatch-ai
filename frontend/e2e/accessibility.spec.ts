@@ -107,10 +107,17 @@ test("mobile menu and tabs are keyboard operable", async ({ page }) => {
     page.getByRole("button", { name: "Open navigation menu" }),
   ).toBeFocused();
 
-  const undergraduate = page.getByRole("tab", { name: "Undergraduate" });
+  const studentUseCases = page.getByRole("tablist", {
+    name: "Student use cases",
+  });
+  const undergraduate = studentUseCases.getByRole("tab", {
+    name: "Undergraduate",
+  });
   await undergraduate.focus();
   await page.keyboard.press("ArrowRight");
-  await expect(page.getByRole("tab", { name: "Postgraduate" })).toBeFocused();
+  await expect(
+    studentUseCases.getByRole("tab", { name: "Postgraduate" }),
+  ).toBeFocused();
   await expect(
     page.getByRole("tabpanel", { name: "Postgraduate" }),
   ).toBeVisible();
@@ -167,6 +174,86 @@ test("marketing navigation stays inside 320, 768, and 1440 pixel viewports", asy
   }
 });
 
+test("interactive hero remains complete and unclipped from 320 to 1440 pixels", async ({
+  page,
+}) => {
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/");
+    await page.waitForTimeout(180);
+
+    const dimensions = await page.evaluate(() => {
+      const headline = document.querySelector(".hero-section h1")!;
+      const demo = document.querySelector(".hero-matcher")!;
+      const headlineBounds = headline.getBoundingClientRect();
+      const demoBounds = demo.getBoundingClientRect();
+      return {
+        client: document.documentElement.clientWidth,
+        scroll: document.documentElement.scrollWidth,
+        headlineLeft: headlineBounds.left,
+        headlineRight: headlineBounds.right,
+        demoLeft: demoBounds.left,
+        demoRight: demoBounds.right,
+      };
+    });
+
+    expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client);
+    expect(dimensions.headlineLeft).toBeGreaterThanOrEqual(0);
+    expect(dimensions.headlineRight).toBeLessThanOrEqual(width);
+    expect(dimensions.demoLeft).toBeGreaterThanOrEqual(0);
+    expect(dimensions.demoRight).toBeLessThanOrEqual(width);
+    await expect(page.locator(".hero-matcher__fact-token")).toHaveCount(3);
+    await expect(page.locator(".hero-matcher__gate")).toHaveCount(3);
+    await expect(page.locator(".hero-matcher__match-card")).toHaveCount(3);
+  }
+});
+
+test("hero scenarios, playback, live summary, and calls to action are operable", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const heroSection = page.getByRole("region", {
+    name: "Don't hunt, just match.",
+  });
+  await expect(
+    heroSection.getByRole("link", { name: "Find my scholarships" }),
+  ).toHaveAttribute("href", "/sign-up?next=/onboarding");
+  await expect(
+    heroSection.getByRole("link", { name: "See how matching works" }),
+  ).toHaveAttribute("href", "#how-it-works");
+
+  const hero = page.getByTestId("hero-matcher");
+  await hero.getByRole("tab", { name: "Postgraduate" }).click();
+  await expect(hero.getByText("Public health", { exact: true })).toBeVisible();
+  await expect(hero.getByRole("status")).toContainText(
+    "Postgraduate profile selected",
+  );
+  await expect(
+    page.locator('.hero-matcher__match-card[data-rank="1"] h3'),
+  ).toHaveText("Research potential opportunity");
+
+  await hero.getByRole("button", { name: "Pause", exact: true }).click();
+  await expect(hero).toHaveAttribute("data-playback", "paused");
+  await hero.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(hero).toHaveAttribute("data-playback", "playing");
+  await hero.getByRole("button", { name: "Replay", exact: true }).click();
+  await expect(hero.getByText("Public health", { exact: true })).toBeVisible();
+
+  const workspace = page.getByRole("region", {
+    name: "Interactive ScholarMatch workspace",
+  });
+  await expect(
+    workspace.getByRole("combobox", { name: "Example profile" }),
+  ).toHaveValue("1");
+  await expect(
+    workspace.getByText("Public health", { exact: true }),
+  ).toBeVisible();
+
+  await expect(
+    workspace.getByText("Research potential opportunity", { exact: true }),
+  ).toBeVisible();
+});
+
 test("reduced motion keeps all marketing content available", async ({
   page,
 }) => {
@@ -174,23 +261,16 @@ test("reduced motion keeps all marketing content available", async ({
   await page.goto("/");
   await expect(page.getByTestId("hero-matcher")).toHaveAttribute(
     "data-motion",
-    "system",
+    "reduced",
   );
   await expect(page.getByTestId("hero-motion-runtime")).toHaveAttribute(
     "data-motion",
     "reduced",
   );
-  const animation = await page
-    .locator(".hero-matcher__rail > i")
-    .evaluate((element) => {
-      const style = getComputedStyle(element);
-      return {
-        duration: Number.parseFloat(style.animationDuration) || 0,
-        iterations: style.animationIterationCount,
-      };
-    });
-  expect(animation.duration).toBeLessThanOrEqual(0.001);
-  expect(animation.iterations).toBe("1");
+  await expect(
+    page.getByRole("button", { name: "Play", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".hero-matcher__match-card")).toHaveCount(3);
   await expect(
     page.getByRole("heading", { name: "Matching is more than a score." }),
   ).toBeVisible();

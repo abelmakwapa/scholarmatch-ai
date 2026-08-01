@@ -1,11 +1,7 @@
 import {
   ArrowRight,
-  Check,
-  CircleAlert,
   Clock3,
   FileText,
-  Fingerprint,
-  ListFilter,
   LockKeyhole,
   Search,
   ShieldCheck,
@@ -15,11 +11,20 @@ import {
 import { ButtonLink } from "./button-link";
 import { approvedStudentStories, categories, features } from "./data";
 import { HeroMatcher } from "./hero-matcher";
+import { MatchingWorkspace } from "./matching-workspace";
 import { SectionHeading } from "./section-heading";
 import { StudentStories } from "./student-stories";
 import { UseCaseTabs } from "./use-case-tabs";
 
-export function HeroSection() {
+export function HeroSection({
+  authenticated = false,
+}: {
+  authenticated?: boolean;
+}) {
+  const findScholarshipsHref = authenticated
+    ? "/matches"
+    : "/sign-up?next=/onboarding";
+
   return (
     <section aria-labelledby="hero-heading" className="hero-section" id="top">
       <div className="hero-section__copy">
@@ -29,18 +34,21 @@ export function HeroSection() {
           <em> just match.</em>
         </h1>
         <p className="hero-section__lede">
-          Build one profile. See opportunities shaped by verified eligibility,
-          your goals, and what you are ready to submit.
+          One student profile becomes ranked scholarship matches with visible
+          reasons for every eligibility result.
         </p>
         <div className="hero-section__actions">
-          <ButtonLink href="#start">Find my scholarships</ButtonLink>
+          <ButtonLink href={findScholarshipsHref}>
+            Find my scholarships
+          </ButtonLink>
           <ButtonLink href="#how-it-works" tone="light">
             See how matching works
           </ButtonLink>
         </div>
         <p className="hero-section__note">
           <ShieldCheck aria-hidden="true" size={16} />
-          AI explains matches. Published rules decide eligibility.
+          Your facts stay visible, and uncertain eligibility stays marked for
+          review.
         </p>
       </div>
       <HeroMatcher />
@@ -49,12 +57,6 @@ export function HeroSection() {
 }
 
 export function ProductDemoSection() {
-  const profileFacts = [
-    ["Study level", "Undergraduate"],
-    ["Field", "Computer science"],
-    ["Location", "Botswana"],
-  ];
-
   return (
     <section
       aria-labelledby="product-demo-heading"
@@ -75,116 +77,7 @@ export function ProductDemoSection() {
           }
         />
 
-        <div
-          className="matching-workbench"
-          data-eligibility-pipeline
-          id="how-it-works"
-        >
-          <div className="matching-workbench__topbar">
-            <div>
-              <span className="status-dot" />
-              <strong>ScholarMatch workspace</strong>
-            </div>
-            <span>Illustrative interface</span>
-          </div>
-
-          <div className="matching-workbench__grid">
-            <article className="workbench-panel workbench-profile">
-              <div className="workbench-panel__heading">
-                <span className="workbench-icon">
-                  <Fingerprint aria-hidden="true" size={18} />
-                </span>
-                <div>
-                  <p>Step 01</p>
-                  <h3>Profile facts</h3>
-                </div>
-              </div>
-              <div className="profile-fact-list">
-                {profileFacts.map(([label, value]) => (
-                  <div className="profile-fact" key={label}>
-                    <span>{label}</span>
-                    <strong>{value}</strong>
-                    <Check aria-hidden="true" size={15} />
-                  </div>
-                ))}
-              </div>
-              <p className="workbench-caption">
-                You control the facts. Missing information stays visible.
-              </p>
-            </article>
-
-            <article className="workbench-panel workbench-rules">
-              <div className="workbench-panel__heading">
-                <span className="workbench-icon">
-                  <ListFilter aria-hidden="true" size={18} />
-                </span>
-                <div>
-                  <p>Step 02</p>
-                  <h3>Eligibility checks</h3>
-                </div>
-              </div>
-              <div
-                className="rule-path"
-                aria-label="Eligibility check sequence"
-              >
-                <div className="rule-path__item rule-path__item--pass">
-                  <Check aria-hidden="true" size={15} />
-                  <span>Study level</span>
-                  <strong>Confirmed</strong>
-                </div>
-                <div className="rule-path__line" aria-hidden="true" />
-                <div className="rule-path__item rule-path__item--pass">
-                  <Check aria-hidden="true" size={15} />
-                  <span>Location rule</span>
-                  <strong>Confirmed</strong>
-                </div>
-                <div className="rule-path__line" aria-hidden="true" />
-                <div className="rule-path__item rule-path__item--unknown">
-                  <CircleAlert aria-hidden="true" size={15} />
-                  <span>Document detail</span>
-                  <strong>Unknown</strong>
-                </div>
-              </div>
-              <p className="workbench-caption">
-                Hard rules filter first. Unknown never silently means
-                ineligible.
-              </p>
-            </article>
-
-            <article className="workbench-panel workbench-matches">
-              <div className="workbench-panel__heading">
-                <span className="workbench-icon workbench-icon--accent">
-                  <Sparkles aria-hidden="true" size={18} />
-                </span>
-                <div>
-                  <p>Step 03</p>
-                  <h3>Ranked matches</h3>
-                </div>
-              </div>
-              <div className="match-result-card">
-                <div>
-                  <span>01</span>
-                  <p>Strong eligibility fit</p>
-                </div>
-                <strong>Ready to review</strong>
-                <ul>
-                  <li>Academic requirements align</li>
-                  <li>Relevant interests detected</li>
-                  <li>One detail still needed</li>
-                </ul>
-              </div>
-              <div
-                className="match-result-card match-result-card--muted"
-                aria-hidden="true"
-              >
-                <div>
-                  <span>02</span>
-                  <p>Promising fit</p>
-                </div>
-              </div>
-            </article>
-          </div>
-        </div>
+        <MatchingWorkspace />
       </div>
     </section>
   );

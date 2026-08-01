@@ -62,3 +62,38 @@ approximately five percent headroom over the measured result.
   sequence, and prove all contexts are removed on unmount.
 - Existing interaction tests cover keyboard/menu state, tabs, carousel state,
   route indicators, and session-aware navigation.
+
+## Interactive hero update — 31 July 2026
+
+The static hero illustration was replaced with three fully rendered profile
+scenarios, semantic playback controls, GSAP gate sequencing, and Motion layout
+transitions for reordered results. All content remains server-prerendered and
+understandable before the deferred GSAP module initializes.
+
+| Measurement                | Previous system | Interactive hero |    Change |
+| -------------------------- | --------------: | ---------------: | --------: |
+| All static JavaScript      |     1,625,344 B |      1,636,088 B | +10,744 B |
+| Largest JavaScript chunk   |       251,395 B |        251,395 B |       0 B |
+| Marketing route JavaScript |       242,747 B |        251,941 B |  +9,194 B |
+| All static CSS             |       107,157 B |        110,207 B |  +3,050 B |
+| Self-hosted fonts          |       290,520 B |        290,520 B |       0 B |
+
+The production build remains inside every checked-in asset and route budget.
+
+## Synchronized workspace update — 1 August 2026
+
+The matching preview and the ScholarMatch workspace now use one shared profile
+scenario. Selecting Undergraduate, Postgraduate, or International in either
+interface immediately updates the facts, eligibility checks, explanations, and
+ranking shown in both places.
+
+| Measurement                | Interactive hero | Shared workspace |   Change |
+| -------------------------- | ---------------: | ---------------: | -------: |
+| All static JavaScript      |      1,636,088 B |      1,639,114 B | +3,026 B |
+| Largest JavaScript chunk   |        251,395 B |        251,395 B |      0 B |
+| Marketing route JavaScript |        251,941 B |        254,967 B | +3,026 B |
+| All static CSS             |        110,207 B |        110,752 B |   +545 B |
+| Self-hosted fonts          |        290,520 B |        290,520 B |      0 B |
+
+The updated production build remains within every repository performance
+budget, including the 255,000-byte marketing route limit.

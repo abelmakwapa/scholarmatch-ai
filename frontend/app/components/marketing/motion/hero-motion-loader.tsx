@@ -7,6 +7,12 @@ const HeroMotion = dynamic(
   { ssr: false },
 );
 
-export function HeroMotionLoader() {
-  return <HeroMotion />;
+type HeroMotionLoaderProps = {
+  animationKey: string;
+  onComplete: () => void;
+  playing: boolean;
+};
+
+export function HeroMotionLoader(props: HeroMotionLoaderProps) {
+  return <HeroMotion {...props} />;
 }

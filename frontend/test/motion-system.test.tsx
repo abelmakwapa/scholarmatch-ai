@@ -12,6 +12,7 @@ vi.mock("@/app/lib/motion/use-motion-policy", () => ({
 }));
 
 import { StoryMotion } from "@/app/components/marketing/motion/story-motion";
+import { HeroMotion } from "@/app/components/marketing/motion/hero-motion";
 import { ScrollTrigger } from "@/app/lib/motion/gsap-client";
 
 function StoryFixture() {
@@ -33,6 +34,23 @@ function StoryFixture() {
       </section>
       <StoryMotion />
     </main>
+  );
+}
+
+function HeroFixture() {
+  return (
+    <section data-hero-motion>
+      {[0, 1, 2].map((index) => (
+        <div className="hero-matcher__fact-token" key={`fact-${index}`} />
+      ))}
+      {[0, 1, 2].map((index) => (
+        <div className="hero-matcher__gate" key={`gate-${index}`} />
+      ))}
+      {[0, 1, 2].map((index) => (
+        <div className="hero-matcher__match-card" key={`match-${index}`} />
+      ))}
+      <HeroMotion animationKey="undergraduate-0" onComplete={vi.fn()} playing />
+    </section>
   );
 }
 
@@ -84,5 +102,34 @@ describe("GSAP marketing lifecycle", () => {
       "reduced",
     );
     expect(ScrollTrigger.getAll()).toHaveLength(0);
+  });
+
+  test("does not duplicate the hero timeline across Strict Mode remounts", async () => {
+    const first = render(
+      <StrictMode>
+        <HeroFixture />
+      </StrictMode>,
+    );
+
+    await waitFor(() =>
+      expect(ScrollTrigger.getAll().map((trigger) => trigger.vars.id)).toEqual([
+        "scholarmatch-hero-demo",
+      ]),
+    );
+    first.unmount();
+    await waitFor(() => expect(ScrollTrigger.getAll()).toHaveLength(0));
+
+    const second = render(
+      <StrictMode>
+        <HeroFixture />
+      </StrictMode>,
+    );
+    await waitFor(() =>
+      expect(ScrollTrigger.getAll().map((trigger) => trigger.vars.id)).toEqual([
+        "scholarmatch-hero-demo",
+      ]),
+    );
+    second.unmount();
+    await waitFor(() => expect(ScrollTrigger.getAll()).toHaveLength(0));
   });
 });

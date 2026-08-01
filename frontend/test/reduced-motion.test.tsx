@@ -25,6 +25,10 @@ test("delegates motion preferences to the global reduced-motion policy", () => {
   render(<HeroMatcher />);
   expect(screen.getByTestId("hero-matcher")).toHaveAttribute(
     "data-motion",
-    "system",
+    "reduced",
+  );
+  expect(screen.getByRole("button", { name: "Play" })).toBeVisible();
+  expect(document.querySelectorAll(".hero-matcher__match-card")).toHaveLength(
+    3,
   );
 });

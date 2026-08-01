@@ -36,7 +36,7 @@ export default async function Home() {
       <Navigation authenticated={Boolean(session)} />
       <MarketingPagePresence>
         <main id="main-content">
-          <HeroSection />
+          <HeroSection authenticated={Boolean(session)} />
           <ProductDemoSection />
           <ProofBand />
           <OutcomeSection />
