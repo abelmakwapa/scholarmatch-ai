@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import "./editorial.css";
+
 import { Footer } from "@/app/components/marketing/footer";
 import { MarketingPagePresence } from "@/app/components/marketing/marketing-page-presence";
 import { Navigation } from "@/app/components/marketing/navigation";

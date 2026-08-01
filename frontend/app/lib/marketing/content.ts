@@ -382,7 +382,7 @@ const resourceAndTrustPages: readonly MarketingContentPage[] = [
     eyebrow: "Support",
     title: "Route the question to the right place.",
     introduction:
-      "A public support inbox or form endpoint has not been configured in this repository, so this page does not pretend to submit a message.",
+      "Check the currently configured support route, prepare the smallest useful report, and avoid sharing unnecessary sensitive information.",
     sections: [
       {
         title: "Incorrect scholarship data",

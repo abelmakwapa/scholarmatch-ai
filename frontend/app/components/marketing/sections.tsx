@@ -537,7 +537,7 @@ export function ClosingSection() {
           <ButtonLink href="/sign-up?next=/onboarding" tone="ink">
             Create my profile
           </ButtonLink>
-          <a href="#top">Back to the top</a>
+          <a href="#page-top">Back to the top</a>
         </div>
         <div className="closing-section__trust">
           <span>

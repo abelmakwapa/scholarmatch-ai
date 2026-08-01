@@ -9,13 +9,6 @@ import {
   UsersRound,
 } from "lucide-react";
 
-export const navItems = [
-  { label: "Product", href: "#product" },
-  { label: "For Students", href: "#students" },
-  { label: "Resources", href: "#resources" },
-  { label: "About", href: "#about" },
-] as const;
-
 export const categories = [
   "Undergraduate",
   "Postgraduate",
