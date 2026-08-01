@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, test } from "vitest";
 
@@ -17,6 +17,12 @@ describe("UseCaseTabs", () => {
       name: "Research",
     });
     expect(researchPanel).toHaveTextContent("research match");
+    expect(researchPanel).toHaveTextContent("proposal and supervisor");
+    expect(
+      within(researchPanel).getByRole("link", {
+        name: "Explore research guidance",
+      }),
+    ).toHaveAttribute("href", "/for-students/research");
 
     await user.keyboard("{ArrowRight}");
     const communityTab = screen.getByRole("tab", { name: "Community" });

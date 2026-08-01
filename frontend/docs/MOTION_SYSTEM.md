@@ -97,3 +97,25 @@ ranking shown in both places.
 
 The updated production build remains within every repository performance
 budget, including the 255,000-byte marketing route limit.
+
+## Homepage product story — 1 August 2026
+
+The homepage now adds match inspection, example opportunity filtering, a local
+readiness checklist, expanded use cases, and native FAQ disclosures. Their
+server-rendered final states remain useful before enhancement. One
+viewport-aware loader defers the interaction module; Motion Mini handles short
+panel, card, and progress transitions. GSAP remains limited to the desktop
+profile–verify–match explanation, while small screens keep the same sequence as
+a normal stacked flow.
+
+| Measurement                | Shared workspace | Product story |    Change |
+| -------------------------- | ---------------: | ------------: | --------: |
+| All static JavaScript      |      1,639,114 B |   1,654,754 B | +15,640 B |
+| Largest JavaScript chunk   |        251,395 B |     251,395 B |       0 B |
+| Marketing route JavaScript |        254,967 B |     248,175 B |  -6,792 B |
+| All static CSS             |        110,752 B |     111,729 B |    +977 B |
+| Self-hosted fonts          |        290,520 B |     290,520 B |       0 B |
+
+The richer page reduces initial marketing-route JavaScript by moving the
+below-the-fold controls out of the route entry chunk. All checked-in budgets
+continue to pass.

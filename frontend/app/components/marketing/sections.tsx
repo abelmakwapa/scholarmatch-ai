@@ -1,20 +1,17 @@
-import {
-  ArrowRight,
-  Clock3,
-  FileText,
-  LockKeyhole,
-  Search,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { Clock3, FileText, LockKeyhole, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 import { ButtonLink } from "./button-link";
-import { approvedStudentStories, categories, features } from "./data";
+import { useCases } from "./data";
 import { HeroMatcher } from "./hero-matcher";
 import { MatchingWorkspace } from "./matching-workspace";
+import {
+  faqItems,
+  matchAnatomyTabs,
+  opportunityExamples,
+  readinessItems,
+} from "./product-story-data";
 import { SectionHeading } from "./section-heading";
-import { StudentStories } from "./student-stories";
-import { UseCaseTabs } from "./use-case-tabs";
 
 export function HeroSection({
   authenticated = false,
@@ -56,130 +53,102 @@ export function HeroSection({
   );
 }
 
-export function ProductDemoSection() {
+export function HowItWorksSection() {
   return (
     <section
-      aria-labelledby="product-demo-heading"
+      aria-labelledby="how-it-works-heading"
       className="product-demo-section"
       data-story-motion-root
-      id="product"
+      id="how-it-works"
     >
       <div className="section-shell">
         <SectionHeading
           align="center"
-          description="A visible path from the facts you provide to a ranked, explainable result. This interface is illustrative and contains no live student data."
-          eyebrow="The matching path"
+          description="Build a profile from facts you control, compare those facts with published rules, then review ranked opportunities with the reasoning attached. Unknown information remains visible for review."
+          eyebrow="How it works"
           inverse
           title={
             <>
-              Facts in. <em>Fit made clear.</em>
+              Profile. Verify. <em>Match.</em>
             </>
           }
         />
-
         <MatchingWorkspace />
+        <p className="section-disclaimer section-disclaimer--inverse">
+          This example demonstrates the workflow. Eligibility and deadlines must
+          still be confirmed with the official scholarship provider.
+        </p>
       </div>
     </section>
   );
 }
 
-export function ProofBand() {
+export function MatchAnatomySection() {
   return (
-    <section aria-labelledby="category-heading" className="proof-band">
-      <div className="proof-band__intro">
-        <p className="eyebrow">Built to explore many paths</p>
-        <h2 id="category-heading">Start with your goals, not a search box.</h2>
-      </div>
-      <div
-        className="category-marquee"
-        data-proof-motion
-        data-testid="category-marquee"
-      >
-        <div className="category-marquee__track">
-          {[0, 1].map((setIndex) => (
-            <ul aria-hidden={setIndex === 1} key={setIndex}>
-              {categories.map((category, index) => (
-                <li key={category}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  {category}
-                </li>
-              ))}
-            </ul>
-          ))}
-        </div>
+    <section
+      aria-labelledby="match-anatomy-heading"
+      className="match-anatomy-section"
+      id="match-anatomy"
+    >
+      <div className="section-shell">
+        <SectionHeading
+          description="Open each layer of an illustrative result to see what is deterministic, what is ranked for relevance, and what still needs confirmation."
+          eyebrow="Match anatomy"
+          title={
+            <>
+              Inspect the result, <em>not just its position.</em>
+            </>
+          }
+        />
+        <MatchAnatomyStatic />
       </div>
     </section>
   );
 }
 
-export function OutcomeSection() {
+export function OpportunityExplorerSection() {
   return (
-    <section aria-labelledby="outcome-heading" className="outcome-section">
+    <section
+      aria-labelledby="opportunity-explorer-heading"
+      className="opportunity-explorer-section"
+      id="opportunity-explorer"
+    >
       <div className="section-shell">
         <SectionHeading
           align="center"
-          description="ScholarMatch is designed to move the difficult questions—eligibility, evidence, timing, and missing information—closer to the start."
-          eyebrow="A more useful starting point"
+          description="Change the filters to see how a catalog can narrow without hiding why an example remains. These are fictional categories, not current scholarship listings."
+          eyebrow="Opportunity explorer"
+          inverse
           title={
             <>
-              One profile. <em>Better matches.</em>
+              Explore the shape of <em>a useful shortlist.</em>
             </>
           }
         />
+        <OpportunityExplorerStatic />
+      </div>
+    </section>
+  );
+}
 
-        <div className="comparison-visual">
-          <article className="comparison-card comparison-card--search">
-            <div className="comparison-card__header">
-              <Search aria-hidden="true" size={20} />
-              <div>
-                <p>Search-first</p>
-                <h3>Open every door yourself</h3>
-              </div>
-            </div>
-            <div className="search-window" aria-hidden="true">
-              <span>scholarship for...</span>
-              <Search size={15} />
-            </div>
-            <div className="search-lines" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
-            <p>Requirements, relevance, and timing live in different places.</p>
-          </article>
-
-          <div className="comparison-arrow" aria-hidden="true">
-            <ArrowRight size={28} strokeWidth={1.6} />
-          </div>
-
-          <article className="comparison-card comparison-card--match">
-            <div className="comparison-card__header">
-              <Sparkles aria-hidden="true" size={20} />
-              <div>
-                <p>Match-first</p>
-                <h3>Start with evidence of fit</h3>
-              </div>
-            </div>
-            <div className="fit-stack">
-              <div>
-                <span>Eligibility</span>
-                <strong>Checked</strong>
-              </div>
-              <div>
-                <span>Why it fits</span>
-                <strong>Explained</strong>
-              </div>
-              <div>
-                <span>What is missing</span>
-                <strong>Visible</strong>
-              </div>
-            </div>
-            <p>
-              Review the strongest candidates with the decision trail attached.
-            </p>
-          </article>
-        </div>
+export function ReadinessSection() {
+  return (
+    <section
+      aria-labelledby="application-readiness-heading"
+      className="application-readiness-section"
+      id="application-readiness"
+    >
+      <div className="section-shell">
+        <SectionHeading
+          description="A relevant match is only actionable when the required evidence, writing, people, and timing are ready. Try the local checklist below."
+          eyebrow="Application readiness"
+          title={
+            <>
+              Turn interest into <em>a preparation plan.</em>
+            </>
+          }
+        />
+        <ReadinessStatic />
       </div>
     </section>
   );
@@ -190,12 +159,12 @@ export function UseCasesSection() {
     <section
       aria-labelledby="use-cases-heading"
       className="use-cases-section"
-      id="students"
+      id="use-cases"
     >
       <div className="section-shell">
         <SectionHeading
-          description="Choose a path to see which facts matter and how the explanation changes."
-          eyebrow="Made for different study paths"
+          description="Choose a path to see distinct profile facts, an example explanation, and the most useful next guide."
+          eyebrow="Use cases"
           inverse
           title={
             <>
@@ -203,68 +172,338 @@ export function UseCasesSection() {
             </>
           }
         />
-        <UseCaseTabs />
+        <UseCasesStatic />
       </div>
     </section>
   );
 }
 
-export function FeaturesSection() {
+export function FaqSection() {
   return (
-    <section
-      aria-labelledby="features-heading"
-      className="features-section"
-      data-feature-story
-      id="resources"
-    >
-      <div className="section-shell">
+    <section aria-labelledby="faq-heading" className="faq-section" id="faq">
+      <div className="section-shell faq-section__shell">
         <SectionHeading
-          description="A recommendation is useful when you can see its limits, inspect its reasons, and act on what comes next."
-          eyebrow="Clarity at every step"
+          description="Straight answers about rules, ranking, AI explanations, uncertainty, privacy, and correcting source data."
+          eyebrow="Frequently asked questions"
           title={
             <>
-              Matching is more than <em>a score.</em>
+              Know what the product does—<em>and what it does not.</em>
             </>
           }
         />
+        <FaqStatic />
+      </div>
+    </section>
+  );
+}
 
-        <div className="feature-grid">
-          {features.map((feature) => (
-            <article className="feature-card" key={feature.number}>
-              <div className="feature-card__meta">
-                <span>{feature.number}</span>
-                <feature.icon aria-hidden="true" size={22} strokeWidth={1.7} />
-              </div>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
-              <div className="feature-card__signal">
-                <span>{feature.visualLabel}</span>
-                <i aria-hidden="true" />
-              </div>
-            </article>
+function MatchAnatomyStatic() {
+  return (
+    <div className="match-anatomy">
+      <article className="anatomy-card">
+        <div className="anatomy-card__meta">
+          <span>Illustrative example</span>
+          <span>Not a live listing</span>
+        </div>
+        <p className="anatomy-card__type">Example education opportunity</p>
+        <h3>Academic pathway opportunity</h3>
+        <p>
+          A sample-safe card showing how a student can inspect a result without
+          treating the ranking as a guarantee.
+        </p>
+        <dl>
+          <div>
+            <dt>Eligibility status</dt>
+            <dd>Review one detail</dd>
+          </div>
+          <div>
+            <dt>Source status</dt>
+            <dd>Example only</dd>
+          </div>
+        </dl>
+        <a href="#application-readiness">Prepare an example checklist</a>
+      </article>
+      <div className="anatomy-inspector">
+        <div
+          aria-label="Scholarship match details"
+          className="anatomy-tabs"
+          data-product-tabs
+          role="tablist"
+        >
+          {matchAnatomyTabs.map((tab, index) => (
+            <button
+              aria-controls={`anatomy-panel-${tab.id}`}
+              aria-selected={index === 0}
+              data-tab
+              id={`anatomy-tab-${tab.id}`}
+              key={tab.id}
+              role="tab"
+              tabIndex={index === 0 ? 0 : -1}
+              type="button"
+            >
+              {tab.label}
+            </button>
           ))}
         </div>
+        {matchAnatomyTabs.map((tab, index) => (
+          <div
+            aria-labelledby={`anatomy-tab-${tab.id}`}
+            className="anatomy-panel"
+            data-panel
+            hidden={index !== 0}
+            id={`anatomy-panel-${tab.id}`}
+            key={tab.id}
+            role="tabpanel"
+          >
+            <p className="eyebrow">{tab.eyebrow}</p>
+            <h3>{tab.title}</h3>
+            <p>{tab.body}</p>
+            <ul>
+              {tab.points.map((point) => (
+                <li key={point}>{point}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }
 
-export function StoriesSection() {
+function OpportunityExplorerStatic() {
   return (
-    <section aria-labelledby="stories-heading" className="stories-section">
-      <div className="section-shell stories-section__shell">
-        <SectionHeading
-          description="No fabricated quotes, no borrowed endorsements. Only approved, attributable experiences belong here."
-          eyebrow="Student stories"
-          title={
-            <>
-              Real voices, <em>when they&apos;re ready.</em>
-            </>
-          }
-        />
-        <StudentStories stories={approvedStudentStories} />
+    <div className="opportunity-explorer" data-explorer>
+      <div className="explorer-filters">
+        <label>
+          Study level
+          <select data-filter="studyLevel" defaultValue="">
+            <option value="">All examples</option>
+            <option>Undergraduate</option>
+            <option>Postgraduate</option>
+          </select>
+        </label>
+        <label>
+          Destination type
+          <select data-filter="destination" defaultValue="">
+            <option value="">All examples</option>
+            <option>Home country</option>
+            <option>International</option>
+            <option>Regional</option>
+          </select>
+        </label>
+        <label>
+          Funding type
+          <select data-filter="funding" defaultValue="">
+            <option value="">All examples</option>
+            <option>Study support</option>
+            <option>Tuition support</option>
+            <option>Project support</option>
+          </select>
+        </label>
+        <label>
+          Field
+          <select data-filter="field" defaultValue="">
+            <option value="">All examples</option>
+            <option>Computing</option>
+            <option>Health</option>
+            <option>Public service</option>
+            <option>Research</option>
+          </select>
+        </label>
+        <button data-clear-filters disabled type="button">
+          Clear filters
+        </button>
       </div>
-    </section>
+      <div className="explorer-results__meta">
+        <strong aria-live="polite" data-result-count>
+          {opportunityExamples.length} illustrative results
+        </strong>
+        <span>Examples are not live scholarships or provider offers.</span>
+      </div>
+      <div className="explorer-results">
+        {opportunityExamples.map((opportunity) => (
+          <article
+            className="explorer-card"
+            data-destination={opportunity.destination}
+            data-example-card
+            data-field={opportunity.field}
+            data-funding={opportunity.funding}
+            data-study-level={opportunity.studyLevel}
+            key={opportunity.id}
+          >
+            <span>Illustrative example</span>
+            <h3>{opportunity.title}</h3>
+            <dl>
+              <div>
+                <dt>Level</dt>
+                <dd>{opportunity.studyLevel}</dd>
+              </div>
+              <div>
+                <dt>Destination</dt>
+                <dd>{opportunity.destination}</dd>
+              </div>
+              <div>
+                <dt>Support type</dt>
+                <dd>{opportunity.funding}</dd>
+              </div>
+              <div>
+                <dt>Field</dt>
+                <dd>{opportunity.field}</dd>
+              </div>
+            </dl>
+            <p>{opportunity.reason}</p>
+          </article>
+        ))}
+      </div>
+      <div className="explorer-empty" data-explorer-empty hidden role="status">
+        <h3>No examples match every selected filter.</h3>
+        <p>
+          Broaden one filter to compare another example. A real catalog would
+          need current, source-backed scholarship records.
+        </p>
+        <button data-clear-filters type="button">
+          Show all examples
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ReadinessStatic() {
+  return (
+    <div className="readiness-demo" data-readiness>
+      <div className="readiness-demo__summary">
+        <p className="eyebrow">Local planning demo</p>
+        <h3 data-readiness-count>
+          0 of {readinessItems.length} areas reviewed
+        </h3>
+        <p>
+          Use this checklist to understand the preparation work around a match.
+          Ticking an item does not verify a document or submit anything.
+        </p>
+        <div
+          aria-label={`0 of ${readinessItems.length} readiness areas reviewed`}
+          aria-valuemax={readinessItems.length}
+          aria-valuemin={0}
+          aria-valuenow={0}
+          className="readiness-progress"
+          role="progressbar"
+        >
+          <span data-readiness-bar />
+        </div>
+        <p className="readiness-demo__privacy">
+          Progress stays only in this page&apos;s component state and resets
+          when the page reloads.
+        </p>
+        <button data-readiness-reset disabled type="button">
+          Reset checklist
+        </button>
+      </div>
+      <ul className="readiness-list">
+        {readinessItems.map((item, index) => (
+          <li data-complete="false" key={item.id}>
+            <label>
+              <input type="checkbox" />
+              <span aria-hidden="true">{index + 1}</span>
+              <strong>{item.label}</strong>
+            </label>
+            <p>{item.detail}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function FaqStatic() {
+  return (
+    <div className="faq-list">
+      {faqItems.map((item) => (
+        <details className="faq-item" data-faq-item key={item.id}>
+          <summary>
+            <span>{item.question}</span>
+            <i aria-hidden="true">+</i>
+          </summary>
+          <div data-faq-answer>
+            <p>{item.answer}</p>
+            {item.id === "corrections" ? (
+              <Link href="/contact">Report data for review</Link>
+            ) : null}
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
+function UseCasesStatic() {
+  return (
+    <div className="use-case-tabs">
+      <div
+        aria-label="Student use cases"
+        className="use-case-tabs__list"
+        data-product-tabs
+        role="tablist"
+      >
+        {useCases.map((useCase, index) => (
+          <button
+            aria-controls={`panel-${useCase.id}`}
+            aria-selected={index === 0}
+            data-tab
+            id={`tab-${useCase.id}`}
+            key={useCase.id}
+            role="tab"
+            tabIndex={index === 0 ? 0 : -1}
+            type="button"
+          >
+            {useCase.label}
+          </button>
+        ))}
+      </div>
+      <div className="use-case-tabs__viewport">
+        {useCases.map((useCase, index) => (
+          <div
+            aria-labelledby={`tab-${useCase.id}`}
+            className="use-case-panel"
+            data-panel
+            hidden={index !== 0}
+            id={`panel-${useCase.id}`}
+            key={useCase.id}
+            role="tabpanel"
+          >
+            <div className="use-case-panel__copy">
+              <p className="eyebrow">{useCase.signal}</p>
+              <h3>{useCase.title}</h3>
+              <p>{useCase.description}</p>
+              <div className="use-case-panel__explanation">
+                <span>Why this example appears</span>
+                <p>{useCase.explanation}</p>
+              </div>
+              <Link href={useCase.cta.href}>{useCase.cta.label}</Link>
+            </div>
+            <div
+              aria-label={`${useCase.label} profile signals`}
+              className="use-case-panel__visual"
+            >
+              <span className="use-case-panel__visual-label">
+                Profile signals
+              </span>
+              {useCase.facts.map((fact, factIndex) => (
+                <div className="use-case-panel__fact" key={fact}>
+                  <span>{String(factIndex + 1).padStart(2, "0")}</span>
+                  <strong>{fact}</strong>
+                  <i aria-hidden="true">✓</i>
+                </div>
+              ))}
+              <div className="use-case-panel__match">
+                <span>Ready to compare</span>
+                <strong>{useCase.signal}</strong>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -295,7 +534,7 @@ export function ClosingSection() {
           application.
         </p>
         <div className="closing-section__actions">
-          <ButtonLink href="/sign-up" tone="ink">
+          <ButtonLink href="/sign-up?next=/onboarding" tone="ink">
             Create my profile
           </ButtonLink>
           <a href="#top">Back to the top</a>

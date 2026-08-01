@@ -37,6 +37,12 @@ export const useCases = [
       "See which opportunities fit your study level, academic record, interests, and location before you spend time on an application.",
     facts: ["Study level", "Academic fit", "Location rules"],
     signal: "Foundational profile",
+    explanation:
+      "Example explanation: the study level and computing focus align; the transcript remains a review item until the official requirement is confirmed.",
+    cta: {
+      label: "Explore undergraduate guidance",
+      href: "/for-students/undergraduate",
+    },
   },
   {
     id: "postgraduate",
@@ -47,6 +53,12 @@ export const useCases = [
       "Connect your intended degree, field, prior study, and goals to opportunities whose published requirements align.",
     facts: ["Degree intent", "Prior study", "Career goals"],
     signal: "Advanced study fit",
+    explanation:
+      "Example explanation: prior study and the intended public-health field align; proposal requirements still need confirmation from the provider.",
+    cta: {
+      label: "Explore postgraduate guidance",
+      href: "/for-students/postgraduate",
+    },
   },
   {
     id: "international",
@@ -57,6 +69,12 @@ export const useCases = [
       "Separate confirmed eligibility, missing profile facts, and destination-specific conditions before ranking the remaining options.",
     facts: ["Nationality", "Destination", "Residency"],
     signal: "Mobility-aware match",
+    explanation:
+      "Example explanation: the published citizenship rule appears to align; residency and language evidence are still marked for review.",
+    cta: {
+      label: "Explore international guidance",
+      href: "/for-students/international",
+    },
   },
   {
     id: "stem",
@@ -67,6 +85,9 @@ export const useCases = [
       "Use verified discipline requirements first, then consider how closely an opportunity’s purpose relates to your profile.",
     facts: ["Discipline", "Coursework", "Interests"],
     signal: "Field-specific fit",
+    explanation:
+      "Example explanation: the named discipline is eligible and coursework is relevant; the final decision remains with the scholarship provider.",
+    cta: { label: "Explore STEM guidance", href: "/for-students/stem" },
   },
   {
     id: "research",
@@ -77,6 +98,9 @@ export const useCases = [
       "Compare study level, subject area, research readiness, and document gaps in one explainable recommendation.",
     facts: ["Research area", "Experience", "Documents"],
     signal: "Research readiness",
+    explanation:
+      "Example explanation: the research topic and prior methods experience are relevant; a proposal and supervisor requirements still need review.",
+    cta: { label: "Explore research guidance", href: "/for-students/research" },
   },
   {
     id: "community",
@@ -87,6 +111,12 @@ export const useCases = [
       "Use only the experiences you choose to share, and distinguish explicit scholarship requirements from softer relevance signals.",
     facts: ["Service", "Leadership", "Impact themes"],
     signal: "Experience alignment",
+    explanation:
+      "Example explanation: the service theme is relevant to the opportunity purpose; evidence of duration and responsibility is still needed.",
+    cta: {
+      label: "Explore community guidance",
+      href: "/for-students/community",
+    },
   },
 ] as const;
 

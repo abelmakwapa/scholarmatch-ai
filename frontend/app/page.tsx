@@ -2,15 +2,16 @@ import { Footer } from "./components/marketing/footer";
 import { MarketingPagePresence } from "./components/marketing/marketing-page-presence";
 import { Navigation } from "./components/marketing/navigation";
 import { StoryMotionLoader } from "./components/marketing/motion/story-motion-loader";
+import { ProductStoryEnhancerLoader } from "./components/marketing/product-story-loader";
 import { getOptionalAuthenticatedSession } from "./lib/auth/server-session";
 import {
   ClosingSection,
-  FeaturesSection,
+  FaqSection,
   HeroSection,
-  OutcomeSection,
-  ProductDemoSection,
-  ProofBand,
-  StoriesSection,
+  HowItWorksSection,
+  MatchAnatomySection,
+  OpportunityExplorerSection,
+  ReadinessSection,
   UseCasesSection,
 } from "./components/marketing/sections";
 
@@ -37,14 +38,15 @@ export default async function Home() {
       <MarketingPagePresence>
         <main id="main-content">
           <HeroSection authenticated={Boolean(session)} />
-          <ProductDemoSection />
-          <ProofBand />
-          <OutcomeSection />
+          <HowItWorksSection />
+          <MatchAnatomySection />
+          <OpportunityExplorerSection />
+          <ReadinessSection />
           <UseCasesSection />
-          <FeaturesSection />
-          <StoriesSection />
+          <FaqSection />
           <ClosingSection />
           <StoryMotionLoader />
+          <ProductStoryEnhancerLoader />
         </main>
       </MarketingPagePresence>
       <Footer />

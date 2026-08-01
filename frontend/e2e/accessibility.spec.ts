@@ -107,6 +107,11 @@ test("mobile menu and tabs are keyboard operable", async ({ page }) => {
     page.getByRole("button", { name: "Open navigation menu" }),
   ).toBeFocused();
 
+  await page.locator("#use-cases").scrollIntoViewIfNeeded();
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-product-story-enhanced",
+    "true",
+  );
   const studentUseCases = page.getByRole("tablist", {
     name: "Student use cases",
   });
@@ -254,6 +259,67 @@ test("hero scenarios, playback, live summary, and calls to action are operable",
   ).toBeVisible();
 });
 
+test("product story controls teach a workflow without pretending to submit", async ({
+  page,
+}) => {
+  await page.goto("/#match-anatomy");
+  await expect(page).toHaveURL(/#match-anatomy$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Inspect the result, not just its position.",
+    }),
+  ).toBeVisible();
+
+  const anatomy = page.getByRole("tablist", {
+    name: "Scholarship match details",
+  });
+  await anatomy.getByRole("tab", { name: "Requirements" }).click();
+  await expect(
+    page.getByRole("tabpanel", { name: "Requirements" }),
+  ).toContainText("academic transcript");
+
+  await page
+    .getByRole("combobox", { name: "Study level" })
+    .selectOption("Postgraduate");
+  await page
+    .getByRole("combobox", { name: "Destination type" })
+    .selectOption("Home country");
+  await page
+    .getByRole("combobox", { name: "Funding type" })
+    .selectOption("Study support");
+  await expect(
+    page.getByRole("heading", {
+      name: "No examples match every selected filter.",
+    }),
+  ).toBeVisible();
+
+  const evidence = page.getByRole("checkbox", {
+    name: "Eligibility evidence",
+  });
+  await evidence.check();
+  await expect(page.getByRole("progressbar")).toHaveAttribute(
+    "aria-valuenow",
+    "1",
+  );
+
+  const aiDisclosure = page
+    .getByText("Does AI decide whether I am eligible?")
+    .locator("..");
+  await aiDisclosure.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(/AI may help explain relevance/i)).toBeVisible();
+
+  await expect(
+    page.getByRole("button", { name: /save|apply|contact provider/i }),
+  ).toHaveCount(0);
+
+  await page.reload();
+  await expect(page.getByRole("progressbar")).toHaveAttribute(
+    "aria-valuenow",
+    "0",
+  );
+});
+
 test("reduced motion keeps all marketing content available", async ({
   page,
 }) => {
@@ -272,7 +338,9 @@ test("reduced motion keeps all marketing content available", async ({
   ).toBeVisible();
   await expect(page.locator(".hero-matcher__match-card")).toHaveCount(3);
   await expect(
-    page.getByRole("heading", { name: "Matching is more than a score." }),
+    page.getByRole("heading", {
+      name: "Explore the shape of a useful shortlist.",
+    }),
   ).toBeVisible();
   await expect(
     page.getByRole("heading", {

@@ -25,13 +25,6 @@ function StoryFixture() {
         <div className="rule-path__item" />
         <div className="rule-path__item" />
       </section>
-      <section data-proof-motion>
-        <div className="category-marquee__track" />
-      </section>
-      <section data-feature-story>
-        <article className="feature-card" />
-        <article className="feature-card" />
-      </section>
       <StoryMotion />
     </main>
   );
@@ -54,16 +47,16 @@ function HeroFixture() {
   );
 }
 
-const expectedIds = [
-  "scholarmatch-eligibility-pipeline",
-  "scholarmatch-feature-story",
-  "scholarmatch-proof-band",
-];
+const expectedIds = ["scholarmatch-eligibility-pipeline"];
 
 describe("GSAP marketing lifecycle", () => {
   beforeEach(() => {
     policy.allowMotion = true;
     policy.reduceMotion = false;
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 1024,
+    });
   });
 
   afterEach(() => {
@@ -102,6 +95,21 @@ describe("GSAP marketing lifecycle", () => {
       "reduced",
     );
     expect(ScrollTrigger.getAll()).toHaveLength(0);
+  });
+
+  test("keeps the explanatory workflow stacked without a scroll timeline on small screens", () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 768,
+    });
+
+    render(<StoryFixture />);
+
+    expect(ScrollTrigger.getAll()).toHaveLength(0);
+    expect(screen.getByTestId("story-motion-runtime")).toHaveAttribute(
+      "data-motion",
+      "full",
+    );
   });
 
   test("does not duplicate the hero timeline across Strict Mode remounts", async () => {

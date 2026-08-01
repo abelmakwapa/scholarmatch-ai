@@ -11,7 +11,6 @@ export function MatchingWorkspace() {
       aria-label="Interactive ScholarMatch workspace"
       className="matching-workbench"
       data-eligibility-pipeline
-      id="how-it-works"
       role="region"
     >
       <div className="matching-workbench__topbar">

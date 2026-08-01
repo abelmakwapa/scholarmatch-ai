@@ -106,9 +106,12 @@ export function UseCaseTabs() {
               <p className="eyebrow">{selected.signal}</p>
               <h3>{selected.title}</h3>
               <p>{selected.description}</p>
-              <a href="#how-it-works">
-                See how matching works{" "}
-                <ArrowRight aria-hidden="true" size={17} />
+              <div className="use-case-panel__explanation">
+                <span>Why this example appears</span>
+                <p>{selected.explanation}</p>
+              </div>
+              <a href={selected.cta.href}>
+                {selected.cta.label} <ArrowRight aria-hidden="true" size={17} />
               </a>
             </div>
 
