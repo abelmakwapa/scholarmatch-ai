@@ -15,7 +15,7 @@ See [Technology Stack and Backend Architecture](docs/TECH_STACK_AND_ARCHITECTURE
 ## Prerequisites
 
 - Node.js 20.9 or newer and npm 11 or newer.
-- Python 3.12 or newer.
+- Python 3.12.13 (pinned in `backend/.python-version`).
 - Supabase project URL and public/server keys.
 - Qwen/DashScope API credentials for backend AI calls.
 
@@ -29,13 +29,18 @@ Install and start the backend:
 cd backend
 python3 -m venv .venv
 . .venv/bin/activate
-python -m pip install -r requirements.txt -r requirements-dev.txt
+python -m pip install --upgrade pip
+make install
 cp app/.env.example app/.env
-# Fill app/.env with your own values.
-uvicorn api.main:app --app-dir app --reload --port 8000
+# Fill app/.env with your own values when integration readiness is required.
+make run
 ```
 
-The API health check is available at `http://localhost:8000/healthz`. Interactive API docs are available at `http://localhost:8000/docs` when `ENVIRONMENT=development`.
+The canonical ASGI import is `app.main:app`. Liveness is available at
+`http://localhost:8000/healthz`; readiness is available at
+`http://localhost:8000/readyz`. Readiness returns `503` until the configured Supabase,
+Qwen, and Redis dependencies have their required settings. Interactive docs and
+`/openapi.json` are available only when `ENVIRONMENT=development`.
 
 In a second terminal, install and start the frontend:
 
@@ -54,15 +59,16 @@ Open `http://localhost:3000`. The frontend example contains only browser-safe va
 Backend variables in `backend/app/.env`:
 
 - `PROJECT_NAME`
-- `API_V1_STR`
+- `API_V1_PREFIX`
 - `ENVIRONMENT`
+- `LOG_LEVEL`
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `QWEN_API_KEY`
 - `QWEN_API_URL`
 - `REDIS_URL`
-- `CORS_ORIGINS`
+- `CORS_ALLOWED_ORIGINS`
 
 Frontend variables in `frontend/.env.local`:
 
@@ -88,6 +94,7 @@ npm run test:e2e:chromium
 
 ```bash
 cd backend
+make install
 make format-check
 make lint
 make typecheck
@@ -95,4 +102,7 @@ make test
 make build
 ```
 
-Use `npm run format` and `make format` to apply automatic formatting. The OpenAPI contract is currently checked in directly and is validated by both test suites; update `docs/openapi.yaml` before implementing or changing an endpoint.
+Use `npm run format` and `make format` to apply automatic formatting. `make quality`
+runs every backend verification check. The OpenAPI contract is currently checked in
+directly and is validated by both test suites; update `docs/openapi.yaml` before
+implementing or changing an endpoint.

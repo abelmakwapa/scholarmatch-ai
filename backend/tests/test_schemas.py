@@ -1,5 +1,5 @@
-from api.schemas.scholarship import ScholarshipCreate
-from api.schemas.user import ProfileCreate
+from app.schemas.scholarship import ScholarshipCreate
+from app.schemas.user import ProfileCreate
 
 
 def test_boundary_schemas_load_and_accept_contract_shapes() -> None:

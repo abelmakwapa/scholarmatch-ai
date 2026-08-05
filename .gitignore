@@ -3,10 +3,10 @@
 **/.env
 **/.env.*
 !**/.env.example
+backend/app/.env
 **/.venv/
 **/__pycache__/
 **/.mypy_cache/
 **/.pytest_cache/
 **/.ruff_cache/
 **/*.py[cod]
-

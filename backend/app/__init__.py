@@ -1,0 +1,1 @@
+"""ScholarMatch backend application package."""

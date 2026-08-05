@@ -1,6 +1,12 @@
 PYTHON ?= python3
 
-.PHONY: format format-check lint typecheck test build quality
+.PHONY: install run format format-check lint typecheck test build quality
+
+install:
+	$(PYTHON) -m pip install -r requirements-dev.txt
+
+run:
+	$(PYTHON) -m uvicorn app.main:app --reload --port 8000
 
 format:
 	$(PYTHON) -m ruff format app tests
@@ -22,4 +28,3 @@ build:
 	$(PYTHON) -m compileall -q -f app
 
 quality: format-check lint typecheck test build
-
