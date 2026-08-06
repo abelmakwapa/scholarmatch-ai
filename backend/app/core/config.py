@@ -4,9 +4,11 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from pydantic import SecretStr, ValidationError, field_validator, model_validator
+from pydantic import Field, SecretStr, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic_settings.exceptions import SettingsError
+
+from app.schemas.match import ScoringWeights
 
 ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
@@ -56,6 +58,9 @@ class Settings(BaseSettings):
     document_max_count: int = 25
     document_quota_bytes: int = 100 * 1024 * 1024
     document_download_ttl_seconds: int = 300
+
+    matching_weights: ScoringWeights = Field(default_factory=ScoringWeights)
+    matching_immediate_limit: int = 100
 
     cors_allowed_origins: list[str] = ["http://localhost:3000"]
 
@@ -189,6 +194,13 @@ class Settings(BaseSettings):
     def validate_document_download_ttl(cls, value: int) -> int:
         if value < 30 or value > 900:
             raise ValueError("must be between 30 and 900 seconds")
+        return value
+
+    @field_validator("matching_immediate_limit")
+    @classmethod
+    def validate_matching_immediate_limit(cls, value: int) -> int:
+        if value < 1 or value > 1000:
+            raise ValueError("must be between 1 and 1000")
         return value
 
     @field_validator("cors_allowed_origins")

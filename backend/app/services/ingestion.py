@@ -24,6 +24,7 @@ from app.repositories.models import (
     RequirementWrite,
     ScholarshipWrite,
 )
+from app.schemas.match import NormalizedRule, RuleField, RuleOperator, RuleSource, RuleStrength
 from app.schemas.scholarship import (
     IngestionRunCreate,
     IngestionRunResponse,
@@ -50,14 +51,18 @@ _STUDY_LEVELS = {
 }
 _REQUIREMENT_FIELDS = {
     "study_level",
+    "country",
     "field_of_study",
     "destination",
     "nationality",
     "residency",
     "gpa",
+    "age",
+    "date_of_birth",
+    "institution",
     "experience",
+    "experience_months",
     "document",
-    "other",
 }
 _REQUIREMENT_OPERATORS = {
     "equals",
@@ -302,6 +307,21 @@ def normalize_source_record(
                 raise NormalizationError(
                     "INVALID_REQUIREMENT", "Requirement field or operator is not recognized."
                 )
+            try:
+                NormalizedRule(
+                    id=UUID(int=0),
+                    field=RuleField(field),
+                    operator=RuleOperator(operator),
+                    value=requirement.get("value"),
+                    strength=RuleStrength(constraint_type),
+                    source=RuleSource(name="ingestion", source_url=canonical_url),
+                    version=1,
+                )
+            except (ValidationError, ValueError):
+                raise NormalizationError(
+                    "INVALID_REQUIREMENT",
+                    "Requirement field, operator, or value is invalid for deterministic matching.",
+                ) from None
             requirements.append(
                 RequirementWrite(
                     constraint_type=cast(Any, constraint_type),

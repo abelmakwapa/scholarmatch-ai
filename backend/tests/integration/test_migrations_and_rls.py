@@ -45,6 +45,7 @@ TABLES = {
     "scholarship_field_history",
     "ingestion_quarantine",
     "ingestion_items",
+    "match_recalculation_jobs",
 }
 
 FOUNDATION_TABLES = TABLES - {
@@ -53,6 +54,7 @@ FOUNDATION_TABLES = TABLES - {
     "scholarship_field_history",
     "ingestion_quarantine",
     "ingestion_items",
+    "match_recalculation_jobs",
 }
 
 EXPECTED_POLICIES = {
@@ -92,6 +94,7 @@ EXPECTED_POLICIES = {
     "scholarship_field_history_admin_select",
     "ingestion_quarantine_admin_select",
     "ingestion_items_admin_select",
+    "match_recalculation_jobs_owner_select",
 }
 
 AUTHORIZATION_POLICIES = EXPECTED_POLICIES - {
@@ -99,7 +102,10 @@ AUTHORIZATION_POLICIES = EXPECTED_POLICIES - {
     "scholarship_field_history_admin_select",
     "ingestion_quarantine_admin_select",
     "ingestion_items_admin_select",
+    "match_recalculation_jobs_owner_select",
 }
+CATALOG_TABLES = TABLES - {"match_recalculation_jobs"}
+CATALOG_POLICIES = EXPECTED_POLICIES - {"match_recalculation_jobs_owner_select"}
 
 
 def _schema_state(database_url: str) -> tuple[set[str], set[str], set[str]]:
@@ -157,7 +163,7 @@ def test_authorization_migration_applies_to_previous_state(isolated_database_url
 def test_profile_document_migration_applies_to_previous_state(
     isolated_database_url: str,
 ) -> None:
-    foundation, authorization, vertical_slice, _ = MIGRATIONS
+    foundation, authorization, vertical_slice, _, _ = MIGRATIONS
     with psycopg.connect(isolated_database_url, autocommit=True) as connection:
         apply_sql_file(connection, BOOTSTRAP)
         apply_sql_file(connection, foundation)
@@ -176,7 +182,7 @@ def test_profile_document_migration_applies_to_previous_state(
 def test_catalog_ingestion_migration_applies_to_previous_state(
     isolated_database_url: str,
 ) -> None:
-    foundation, authorization, vertical_slice, catalog_ingestion = MIGRATIONS
+    foundation, authorization, vertical_slice, catalog_ingestion, _ = MIGRATIONS
     with psycopg.connect(isolated_database_url, autocommit=True) as connection:
         apply_sql_file(connection, BOOTSTRAP)
         apply_sql_file(connection, foundation)
@@ -185,9 +191,41 @@ def test_catalog_ingestion_migration_applies_to_previous_state(
         apply_sql_file(connection, catalog_ingestion)
 
     tables, rls_tables, policies = _schema_state(isolated_database_url)
-    assert tables == TABLES
-    assert rls_tables == TABLES
-    assert policies == EXPECTED_POLICIES
+    assert tables == CATALOG_TABLES
+    assert rls_tables == CATALOG_TABLES
+    assert policies == CATALOG_POLICIES
+
+
+def test_matching_migration_applies_to_previous_state(
+    isolated_database_url: str,
+) -> None:
+    *previous, matching = MIGRATIONS
+    with psycopg.connect(isolated_database_url, autocommit=True) as connection:
+        apply_sql_file(connection, BOOTSTRAP)
+        for migration in previous:
+            apply_sql_file(connection, migration)
+        apply_sql_file(connection, matching)
+        profile_columns = {
+            row[0]
+            for row in connection.execute(
+                "select column_name from information_schema.columns "
+                "where table_schema = 'public' and table_name = 'profiles'"
+            ).fetchall()
+        }
+        match_columns = {
+            row[0]
+            for row in connection.execute(
+                "select column_name from information_schema.columns "
+                "where table_schema = 'public' and table_name = 'matches'"
+            ).fetchall()
+        }
+
+    tables, rls_tables, policies = _schema_state(isolated_database_url)
+    assert {"institution_name", "experience_months"} <= profile_columns
+    assert {"eligibility_status", "missing_profile_fields"} <= match_columns
+    assert "match_recalculation_jobs" in tables
+    assert "match_recalculation_jobs" in rls_tables
+    assert "match_recalculation_jobs_owner_select" in policies
 
 
 def _seed(database_url: str) -> None:
@@ -233,6 +271,11 @@ def _seed(database_url: str) -> None:
                 "profile_data_version, scholarship_data_version) "
                 "values (%s, %s, 0.8, 0.9, 'v1', 1, 1)",
                 (profile_id, PUBLISHED_SCHOLARSHIP_ID),
+            )
+            connection.execute(
+                "insert into public.match_recalculation_jobs "
+                "(profile_id, profile_data_version, algorithm_version) values (%s, 1, 'v1')",
+                (profile_id,),
             )
             connection.execute(
                 "insert into public.applications (profile_id, scholarship_id) values (%s, %s)",
@@ -322,6 +365,7 @@ def test_rls_access_matrix(migrated_database_url: str) -> None:
         "scholarship_field_history": 0,
         "ingestion_quarantine": 0,
         "ingestion_items": 0,
+        "match_recalculation_jobs": 1,
     }
     for subject in (OWNER_ID, OTHER_ID):
         with _principal_connection(
@@ -359,6 +403,7 @@ def test_rls_access_matrix(migrated_database_url: str) -> None:
         assert _count(administrator, "scholarship_field_history") == 0
         assert _count(administrator, "ingestion_quarantine") == 0
         assert _count(administrator, "ingestion_items") == 0
+        assert _count(administrator, "match_recalculation_jobs") == 0
     with pytest.raises(errors.InsufficientPrivilege):
         with _principal_connection(
             migrated_database_url,
@@ -394,6 +439,7 @@ def test_rls_access_matrix(migrated_database_url: str) -> None:
             "scholarship_field_history": 0,
             "ingestion_quarantine": 0,
             "ingestion_items": 0,
+            "match_recalculation_jobs": 2,
         }
 
 
@@ -501,6 +547,10 @@ def test_known_query_indexes_exist(migrated_database_url: str) -> None:
         "scholarship_sources_fingerprint_idx",
         "ingestion_quarantine_run_idx",
         "ingestion_items_claim_idx",
+        "matches_profile_version_idx",
+        "matches_ranked_profile_score_idx",
+        "match_recalculation_jobs_profile_created_idx",
+        "match_recalculation_jobs_claim_idx",
     }
     with psycopg.connect(migrated_database_url) as connection:
         actual = {
@@ -539,6 +589,11 @@ def test_catalog_query_plans_use_known_shape_indexes(migrated_database_url: str)
         "scholarships_study_levels_idx": (
             "select id from public.scholarships "
             "where study_levels @> array['undergraduate']::text[]"
+        ),
+        "matches_ranked_profile_score_idx": (
+            "select id from public.matches "
+            f"where profile_id = '{OWNER_ID}' and eligibility_status <> 'ineligible' "
+            "order by total_score desc, id limit 20"
         ),
     }
     with psycopg.connect(migrated_database_url) as connection:

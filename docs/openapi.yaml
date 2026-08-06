@@ -400,19 +400,18 @@ paths:
     post:
       operationId: recalculateMatches
       tags: [Matches]
-      summary: Queue a match recalculation for the authenticated student.
-      parameters:
-        - $ref: "#/components/parameters/IdempotencyKey"
+      summary: Reuse, calculate, or queue deterministic matches for the authenticated student.
       responses:
-        "202":
-          description: Recalculation queued.
-          headers:
-            Idempotency-Replayed:
-              $ref: "#/components/headers/IdempotencyReplayed"
+        "200":
+          description: Existing calculations reused or a bounded workload calculated immediately.
           content:
             application/json:
-              schema:
-                $ref: "#/components/schemas/JobResponse"
+              schema: { $ref: "#/components/schemas/RecalculationResponse" }
+        "202":
+          description: An idempotent recalculation job was accepted for a larger workload.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RecalculationResponse" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "409": { $ref: "#/components/responses/Conflict" }
         "429": { $ref: "#/components/responses/RateLimited" }
@@ -446,7 +445,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MatchResponse"
+                $ref: "#/components/schemas/MatchDetail"
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
@@ -1254,6 +1253,8 @@ components:
         goals: { type: [string, "null"], maxLength: 4000 }
         requires_financial_aid: { type: [boolean, "null"] }
         willing_to_relocate: { type: [boolean, "null"] }
+        institution_name: { type: [string, "null"], maxLength: 300 }
+        experience_months: { type: [integer, "null"], minimum: 0, maximum: 1200 }
     ProfileResponse:
       type: object
       additionalProperties: false
@@ -1289,6 +1290,8 @@ components:
         goals: { type: [string, "null"], maxLength: 4000 }
         requires_financial_aid: { type: [boolean, "null"] }
         willing_to_relocate: { type: [boolean, "null"] }
+        institution_name: { type: [string, "null"], maxLength: 300 }
+        experience_months: { type: [integer, "null"], minimum: 0, maximum: 1200 }
         data_version: { type: integer, minimum: 1 }
         completeness: { $ref: "#/components/schemas/ProfileCompleteness" }
         created_at:
@@ -1598,86 +1601,88 @@ components:
     ScoreComponent:
       type: object
       additionalProperties: false
-      required: [name, score, weight]
+      required: [name, formula_version, score, weight, weighted_score, evidence]
       properties:
         name:
           type: string
           enum:
             [
-              academics,
+              academic_fit,
               eligibility_fit,
               interests_goals,
               experience,
               readiness_timing,
             ]
+        formula_version: { type: string, minLength: 1, maxLength: 100 }
         score: { type: number, minimum: 0, maximum: 1 }
         weight: { type: number, minimum: 0, maximum: 1 }
-    MissingProfileFact:
+        weighted_score: { type: number, minimum: 0, maximum: 1 }
+        evidence: { type: array, items: { type: string } }
+    RuleSource:
       type: object
       additionalProperties: false
-      required: [field, question]
+      required: [name]
       properties:
-        field: { type: string }
-        question: { type: string }
-    MatchExplanation:
+        name: { type: string, minLength: 1, maxLength: 200 }
+        source_url: { type: [string, "null"], format: uri }
+        summary: { type: [string, "null"], maxLength: 2000 }
+    RuleResult:
       type: object
       additionalProperties: false
       required:
         [
-          why_this_matches,
-          what_may_block_you,
-          missing_information,
-          next_actions,
+          rule_id,
+          field,
+          operator,
+          strength,
+          outcome,
+          reason_code,
+          message,
+          missing_profile_fields,
+          source,
+          rule_version,
         ]
       properties:
-        why_this_matches: { type: array, items: { type: string } }
-        what_may_block_you: { type: array, items: { type: string } }
-        missing_information:
-          type: array
-          items: { $ref: "#/components/schemas/MissingProfileFact" }
-        next_actions: { type: array, items: { type: string } }
-    RequirementEvidence:
+        rule_id: { type: [string, "null"], format: uuid }
+        field: { type: string }
+        operator: { type: string }
+        strength: { type: string, enum: [hard, soft] }
+        outcome: { type: string, enum: [eligible, ineligible, unknown] }
+        reason_code: { type: string }
+        message: { type: string }
+        missing_profile_fields: { type: array, items: { type: string } }
+        source: { $ref: "#/components/schemas/RuleSource" }
+        rule_version: { type: integer, minimum: 1 }
+    MatchScholarshipSummary:
       type: object
       additionalProperties: false
-      required: [label, detail, basis, source_url]
+      required: [id, title, provider, deadline, funding_type]
       properties:
-        label: { type: string }
-        detail: { type: string }
-        basis:
-          type: string
-          enum:
-            [
-              verified_requirement,
-              inferred_relevance,
-              profile_unknown,
-              requirement_not_met,
-            ]
-        source_url: { type: [string, "null"], format: uri }
-    MatchResponse:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        provider: { type: string }
+        deadline: { type: [string, "null"], format: date }
+        funding_type: { type: string }
+    MatchListItem:
       type: object
       additionalProperties: false
       required:
         [
           id,
-          rank,
           scholarship,
-          score,
+          rank_score,
           confidence,
-          score_components,
-          requirement_evidence,
-          deterministic_explanation,
-          ai_explanation,
-          explanation_status,
+          eligibility,
+          missing_profile_fields,
           algorithm_version,
-          calculation_status,
-          stale_reasons,
+          profile_data_version,
+          scholarship_data_version,
           calculated_at,
         ]
       properties:
         id: { type: string, format: uuid }
-        rank: { type: integer, minimum: 1 }
-        scholarship: { $ref: "#/components/schemas/ScholarshipResponse" }
-        score:
+        scholarship: { $ref: "#/components/schemas/MatchScholarshipSummary" }
+        rank_score:
           type: number
           minimum: 0
           maximum: 1
@@ -1687,36 +1692,59 @@ components:
           minimum: 0
           maximum: 1
           description: Confidence in the score inputs based on profile and requirement completeness; never a probability of winning.
-        score_components:
-          {
-            type: array,
-            items: { $ref: "#/components/schemas/ScoreComponent" },
-          }
-        requirement_evidence:
-          type: array
-          items: { $ref: "#/components/schemas/RequirementEvidence" }
-        deterministic_explanation:
-          { $ref: "#/components/schemas/MatchExplanation" }
-        ai_explanation:
-          oneOf:
-            - $ref: "#/components/schemas/MatchExplanation"
-            - type: "null"
-        reasons: { type: array, items: { type: string } }
-        gaps: { type: array, items: { type: string } }
-        explanation_status:
-          { type: string, enum: [pending, ready, unavailable] }
+        eligibility: { type: string, enum: [eligible, ineligible, unknown] }
+        missing_profile_fields: { type: array, items: { type: string } }
         algorithm_version: { type: string }
-        calculation_status: { type: string, enum: [current, stale] }
-        stale_reasons: { type: array, items: { type: string } }
+        profile_data_version: { type: integer, minimum: 1 }
+        scholarship_data_version: { type: integer, minimum: 1 }
         calculated_at: { type: string, format: date-time }
+    MatchDetail:
+      allOf:
+        - $ref: "#/components/schemas/MatchListItem"
+        - type: object
+          additionalProperties: false
+          required: [rule_results, score_breakdown, reasons]
+          properties:
+            rule_results:
+              type: array
+              items: { $ref: "#/components/schemas/RuleResult" }
+            score_breakdown:
+              type: array
+              items: { $ref: "#/components/schemas/ScoreComponent" }
+            reasons: { type: array, items: { type: string } }
     MatchPage:
       type: object
       additionalProperties: false
-      required: [data, pagination]
+      required: [data, next_cursor, has_more, limit]
       properties:
         data:
-          { type: array, items: { $ref: "#/components/schemas/MatchResponse" } }
-        pagination: { $ref: "#/components/schemas/Pagination" }
+          { type: array, items: { $ref: "#/components/schemas/MatchListItem" } }
+        next_cursor: { type: [string, "null"] }
+        has_more: { type: boolean }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+    RecalculationResponse:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          mode,
+          job_id,
+          candidate_count,
+          calculated_count,
+          reused_count,
+          excluded_count,
+          profile_data_version,
+          algorithm_version,
+        ]
+      properties:
+        mode: { type: string, enum: [existing, immediate, accepted] }
+        job_id: { type: [string, "null"], format: uuid }
+        candidate_count: { type: integer, minimum: 0 }
+        calculated_count: { type: integer, minimum: 0 }
+        reused_count: { type: integer, minimum: 0 }
+        excluded_count: { type: integer, minimum: 0 }
+        profile_data_version: { type: integer, minimum: 1 }
+        algorithm_version: { type: string }
     ApplicationStatus:
       type: string
       enum:

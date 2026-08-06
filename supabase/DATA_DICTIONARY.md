@@ -10,7 +10,8 @@ use explicit check constraints so invalid or differently-cased states cannot ent
 | `scholarship_providers` | Shared normalized provider catalog. | Referenced by `scholarships.provider_id`. | Providers cannot be deleted while scholarships reference them. Admins can insert/update but not delete. |
 | `scholarships` | Shared normalized scholarship catalog and provenance entry point. | Belongs to one provider; referenced by requirements, matches, and applications. | Admins update lifecycle state. Requirements and derived matches cascade on deletion; applications restrict deletion so tracked history is not silently lost. |
 | `scholarship_requirements` | Ordered, versioned hard/soft eligibility rules. | Belongs to one scholarship. | Cascades with scholarship. Admin replacement can delete/insert requirements; direct user mutation is denied. |
-| `matches` | Private materialized match result; no calculation logic is implemented here. | Belongs to a profile and scholarship; unique per pair. | Profile or scholarship deletion removes derived matches. Only owners can read; backend service authorization controls writes. |
+| `matches` | Private materialized deterministic eligibility and scoring result. | Belongs to a profile and scholarship; unique per pair. | Profile or scholarship deletion removes derived matches. Only owners can read; backend service authorization controls writes. |
+| `match_recalculation_jobs` | Private workload checkpoint for calculations above the synchronous limit. | Belongs to a profile; unique by profile input version and algorithm version. | Profile deletion cascades. Owners may read status; only the authorized backend match worker may mutate jobs. |
 | `applications` | Private application tracking state, checklist, history, and reminder. | Belongs to a profile and scholarship; unique per pair. | Profile deletion cascades. Scholarship deletion is restricted. Owner CRUD is allowed by RLS. |
 | `profile_documents` | Private document metadata; object bytes remain in private Supabase Storage. | Belongs to a profile; storage bucket/path is unique. | Profile deletion cascades metadata. A deletion tombstone coordinates object and derived-content cleanup. |
 | `notification_preferences` | One private notification configuration per profile. | `profile_id` is the primary key and references `profiles.id`. | Profile deletion cascades. Owner CRUD is allowed by RLS. |
@@ -37,7 +38,9 @@ allowed. JSON values are constrained to the documented top-level shape.
   for unknown GPA, or both present with `gpa <= gpa_scale`.
 - `nationality_country`, `residence_country`, `date_of_birth`, `requires_financial_aid`, and
   `willing_to_relocate` are nullable so unknown remains distinct from explicit `false`.
-  `interests` and `target_countries` are bounded arrays. `data_version` is the matching-input revision.
+  `interests` and `target_countries` are bounded arrays. `institution_name` and
+  `experience_months` provide deterministic institution and experience evidence. `data_version`
+  is the matching-input revision.
 
 ### `scholarship_providers`
 
@@ -65,7 +68,7 @@ allowed. JSON values are constrained to the documented top-level shape.
 
 - `id`: generated UUID. `scholarship_id`: owning scholarship. `constraint_type`: `hard` or `soft`.
 - `field`: normalized eligibility field; `operator`: normalized comparison operator; `value`: JSON
-  operand. No matching evaluation is implemented by the migration.
+  operand evaluated by the versioned deterministic engine.
 - `source_evidence`: JSON object containing provenance. `reviewer_notes`: optional admin note.
   `position`: unique order within the scholarship. `version`: positive requirement revision.
 
@@ -77,7 +80,17 @@ allowed. JSON values are constrained to the documented top-level shape.
   `ai_explanation`: optional JSON object.
 - `explanation_status`: `pending`, `ready`, or `unavailable`. `algorithm_version`, optional
   `embedding_version`, `profile_data_version`, and `scholarship_data_version`: reproducibility
-  metadata. `stale_reasons`: JSON array. `calculated_at`: computation time.
+  metadata. `eligibility_status` preserves `eligible`, `ineligible`, or `unknown`, and
+  `missing_profile_fields` records evidence gaps. `stale_reasons`: JSON array. `calculated_at`:
+  computation time.
+
+### `match_recalculation_jobs`
+
+- `profile_id`, `profile_data_version`, and `algorithm_version` form the idempotent workload key.
+- `status`: `queued`, `running`, `completed`, `failed`, or `cancelled`. `counters` stores bounded
+  calculation totals and `safe_errors` stores sanitized worker failures only.
+- `started_at` and `completed_at` record execution timing. Owner RLS is read-only; service-role
+  access is additionally constrained by the Python `MATCH_WORKER` capability.
 
 ### `applications`
 
@@ -169,12 +182,14 @@ allowed. JSON values are constrained to the documented top-level shape.
 
 - Scholarship indexes correspond to the contract's published-status, deadline, verification,
   comparable currency/amount, funding type, array filters, source URL, and text-search queries.
-- Match indexes support owner-scoped descending score pagination and profile/scholarship lookup.
+- Match indexes support owner-scoped descending score/UUID pagination excluding only confirmed
+  ineligible rows, version reuse checks, and profile/scholarship lookup. Recalculation-job indexes
+  support owner history and deterministic queued-job claims.
 - Application indexes support owner pagination, chronological deadlines, and status workspaces.
 - Document, ingestion, and audit indexes support their documented owner/admin timelines.
 - Raw-source, fingerprint, quarantine, and partial item indexes support the ingestion query shapes;
   raw JSON fields are deliberately not indexed.
 - The idempotency expiry index supports bounded cleanup; the unique key supports replay lookup.
 
-No vector index is included. Matching calculations and embedding persistence remain intentionally
-deferred until measured retrieval queries exist.
+No vector index is included. Embedding persistence and semantic/LLM ranking remain intentionally
+deferred until measured retrieval queries and an approved model policy exist.

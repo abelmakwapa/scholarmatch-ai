@@ -11,7 +11,7 @@ from app.repositories.models import ProfileWrite
 from app.schemas.user import ProfileCompleteness, ProfileFields, ProfileResponse, ProfileUpdate
 from app.services.work_queue import WorkQueue
 
-COMPLETENESS_VERSION = "2026-08-01"
+COMPLETENESS_VERSION = "2026-08-06"
 _REQUIRED_FIELDS = ("full_name", "country", "study_level")
 _RECOMMENDED_FIELDS = (
     "field_of_study",
@@ -24,6 +24,8 @@ _RECOMMENDED_FIELDS = (
     "goals",
     "requires_financial_aid",
     "willing_to_relocate",
+    "institution_name",
+    "experience_months",
 )
 _MATCHING_FIELDS = frozenset(
     {
@@ -40,6 +42,8 @@ _MATCHING_FIELDS = frozenset(
         "goals",
         "requires_financial_aid",
         "willing_to_relocate",
+        "institution_name",
+        "experience_months",
     }
 )
 

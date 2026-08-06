@@ -1,5 +1,6 @@
 import pytest
 from app.core.config import ConfigurationError, Environment, Settings, get_settings
+from app.schemas.match import ScoringWeights
 from pydantic import ValidationError
 
 
@@ -23,6 +24,32 @@ def test_production_cors_requires_https() -> None:
             _env_file=None,
             environment=Environment.PRODUCTION,
             cors_allowed_origins=["http://app.example.com"],
+        )
+
+
+def test_matching_weight_configuration_is_typed_and_must_sum_to_one() -> None:
+    configured = Settings(
+        _env_file=None,
+        matching_weights=ScoringWeights(
+            academic_fit=0.2,
+            eligibility_fit=0.4,
+            interests_goals=0.15,
+            experience=0.1,
+            readiness_timing=0.15,
+        ),
+    )
+    assert configured.matching_weights.eligibility_fit == 0.4
+
+    with pytest.raises(ValidationError, match="sum to 1.0"):
+        Settings(
+            _env_file=None,
+            matching_weights=ScoringWeights(
+                academic_fit=0.5,
+                eligibility_fit=0.3,
+                interests_goals=0.15,
+                experience=0.1,
+                readiness_timing=0.15,
+            ),
         )
 
 

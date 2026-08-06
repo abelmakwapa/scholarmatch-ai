@@ -19,6 +19,8 @@ class WorkQueue(Protocol):
 
     async def enqueue_ingestion_run(self, run_id: UUID, *, idempotency_key: str) -> bool: ...
 
+    async def enqueue_match_calculation(self, job_id: UUID, *, idempotency_key: str) -> bool: ...
+
 
 class InMemoryWorkQueue:
     """Development/test adapter. Production must inject a durable queue adapter."""
@@ -54,4 +56,8 @@ class InMemoryWorkQueue:
 
     async def enqueue_ingestion_run(self, run_id: UUID, *, idempotency_key: str) -> bool:
         del run_id
+        return self._reserve(idempotency_key)
+
+    async def enqueue_match_calculation(self, job_id: UUID, *, idempotency_key: str) -> bool:
+        del job_id
         return self._reserve(idempotency_key)

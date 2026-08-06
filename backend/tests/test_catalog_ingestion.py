@@ -550,6 +550,16 @@ def test_normalization_change_duplicate_invalid_deadline_and_requirement() -> No
             RawSourceRecord("requirement", str(payload["source_url"]), invalid_requirement, NOW),
         )
 
+    invalid_rule_value = dict(payload)
+    invalid_rule_value["requirements"] = [
+        {"field": "gpa", "operator": "gte", "value": 3.5, "summary": "missing scale"}
+    ]
+    with pytest.raises(ValueError, match="INVALID_REQUIREMENT"):
+        normalize_source_record(
+            adapter,
+            RawSourceRecord("rule-value", str(payload["source_url"]), invalid_rule_value, NOW),
+        )
+
 
 def test_ingestion_created_changed_duplicate_and_quarantine() -> None:
     repository = FakeIngestionRepository()

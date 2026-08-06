@@ -32,6 +32,7 @@ def test_required_resource_paths_are_declared() -> None:
         "/scholarships/{scholarship_id}/reports",
         "/matches",
         "/matches/recalculate",
+        "/matches/{scholarship_id}",
         "/matches/recalculation-jobs/{job_id}",
         "/matches/{scholarship_id}/feedback",
         "/applications",

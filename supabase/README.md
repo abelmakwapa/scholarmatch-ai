@@ -3,7 +3,9 @@
 Migrations live in `migrations/` and are applied in lexical timestamp order. The first migration
 creates the normalized PostgreSQL schema; the second adds grants and RLS policies; the third adds
 the versioned profile inputs and private-document lifecycle; the fourth adds public catalog
-provenance, immutable source records, resumable ingestion items, quarantine, and change history.
+provenance, immutable source records, resumable ingestion items, quarantine, and change history;
+the fifth adds deterministic matching inputs, materialized eligibility state, ranking indexes, and
+owner-visible recalculation jobs.
 The test-only
 `tests/bootstrap_local_postgres.sql` supplies the Supabase roles and Auth helper functions when the
 suite runs against vanilla PostgreSQL. It is never applied to a Supabase project.

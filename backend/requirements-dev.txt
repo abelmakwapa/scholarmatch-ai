@@ -1,6 +1,7 @@
 -r requirements.txt
 
 httpx2==2.9.1
+hypothesis==6.160.0
 mypy==1.17.0
 openapi-spec-validator==0.7.2
 pytest==8.4.1

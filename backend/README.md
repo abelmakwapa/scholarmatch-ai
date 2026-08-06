@@ -44,6 +44,13 @@ requires review before publication. Production must inject a durable queue consu
 claims, resume cursors, bounded attempts, quarantine, and dead-letter state form the worker-safe
 boundary.
 
+Deterministic matching is available at `GET /api/v1/matches`,
+`POST /api/v1/matches/recalculate`, and `GET /api/v1/matches/{scholarship_id}`. Small catalog
+workloads calculate in the request; larger workloads create an idempotent recalculation job for a
+durable worker adapter. The bundled queue only records dispatch in memory and is not a production
+worker. Matching never calls Qwen or another LLM. Formulas, evidence handling, GPA policy, and known
+limitations are documented in [`docs/MATCHING.md`](../docs/MATCHING.md).
+
 After an admin queues a deterministic fixture run, process one resumable batch locally with:
 
 ```bash
@@ -77,6 +84,7 @@ Supabase migration commands and the persistence documentation are in
 [`supabase/README.md`](../supabase/README.md).
 
 OpenAPI endpoints (`/docs`, `/redoc`, and `/openapi.json`) exist only in the `development`
-environment. Matching calculations, live-source adapters, durable worker implementations,
-automatic duplicate merging, derived text/embedding generation, application endpoints,
-notifications, and Qwen integration remain intentionally unimplemented.
+environment. Live-source adapters, durable match/ingestion worker implementations, automatic
+duplicate merging, matching calculations beyond the documented deterministic MVP, derived
+text/embedding generation, application endpoints, notifications, and Qwen integration remain
+intentionally unimplemented.

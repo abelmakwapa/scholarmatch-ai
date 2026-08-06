@@ -7,6 +7,8 @@ from app.repositories.interfaces import (
     CatalogAdminRepository,
     DocumentRepository,
     IngestionRunRepository,
+    MatchReadRepository,
+    MatchWriteRepository,
     ProfileRepository,
     ScholarshipReadRepository,
 )
@@ -30,6 +32,12 @@ class UserUnitOfWork(Protocol):
 
     @property
     def audit(self) -> AuditEventRepository: ...
+
+    @property
+    def matches(self) -> MatchReadRepository: ...
+
+    @property
+    def match_writer(self) -> MatchWriteRepository: ...
 
 
 class Database(Protocol):

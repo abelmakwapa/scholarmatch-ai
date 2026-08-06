@@ -258,7 +258,7 @@ def test_profile_partial_updates_completeness_and_data_version() -> None:
     assert created["requires_financial_aid"] is False
     assert created["data_version"] == 1
     completeness = cast(dict[str, object], created["completeness"])
-    assert completeness["version"] == "2026-08-01"
+    assert completeness["version"] == "2026-08-06"
     assert completeness["required_completed"] == 3
     assert len(queue.keys) == 1
 

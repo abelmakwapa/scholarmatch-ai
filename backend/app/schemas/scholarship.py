@@ -7,6 +7,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.schemas.match import (
+    NormalizedRule,
+    RuleField,
+    RuleOperator,
+    RuleSource,
+    RuleStrength,
+)
 from app.schemas.user import CountryCode
 
 
@@ -40,14 +47,18 @@ StudyLevel = Literal[
 ]
 RequirementField = Literal[
     "study_level",
+    "country",
     "field_of_study",
     "destination",
     "nationality",
     "residency",
     "gpa",
+    "age",
+    "date_of_birth",
+    "institution",
     "experience",
+    "experience_months",
     "document",
-    "other",
 ]
 RequirementOperator = Literal[
     "equals", "not_equals", "in", "not_in", "gte", "lte", "contains", "exists"
@@ -198,10 +209,23 @@ class RequirementWriteRequest(BaseModel):
     constraint_type: Literal["hard", "soft"]
     field: RequirementField
     operator: RequirementOperator
-    value: str | int | float | bool | list[str]
+    value: Any
     source_evidence: dict[str, Any] = Field(default_factory=dict)
     reviewer_notes: str | None = Field(default=None, max_length=3000)
     position: int = Field(ge=0, le=999)
+
+    @model_validator(mode="after")
+    def validate_deterministic_rule(self) -> "RequirementWriteRequest":
+        NormalizedRule(
+            id=UUID(int=0),
+            field=RuleField(self.field),
+            operator=RuleOperator(self.operator),
+            value=self.value,
+            strength=RuleStrength(self.constraint_type),
+            source=RuleSource(),
+            version=1,
+        )
+        return self
 
 
 class AdminScholarshipWrite(BaseModel):

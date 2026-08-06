@@ -10,14 +10,18 @@ class RequirementWrite:
     constraint_type: Literal["hard", "soft"]
     field: Literal[
         "study_level",
+        "country",
         "field_of_study",
         "destination",
         "nationality",
         "residency",
         "gpa",
+        "age",
+        "date_of_birth",
+        "institution",
         "experience",
+        "experience_months",
         "document",
-        "other",
     ]
     operator: Literal["equals", "not_equals", "in", "not_in", "gte", "lte", "contains", "exists"]
     value: Any
@@ -58,8 +62,18 @@ class MatchWrite:
     embedding_version: str | None
     profile_data_version: int
     scholarship_data_version: int
+    eligibility_status: Literal["eligible", "ineligible", "unknown"]
+    missing_profile_fields: list[str]
     stale_reasons: list[str]
     calculated_at: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class MatchJobWrite:
+    profile_id: UUID
+    profile_data_version: int
+    algorithm_version: str
+    candidate_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -103,6 +117,8 @@ class ProfileWrite:
     requires_financial_aid: bool | None
     willing_to_relocate: bool | None
     data_version: int
+    institution_name: str | None = None
+    experience_months: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

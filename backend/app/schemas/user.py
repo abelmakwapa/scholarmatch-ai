@@ -71,6 +71,8 @@ class ProfileFields(BaseModel):
     goals: str | None = Field(default=None, max_length=4000)
     requires_financial_aid: bool | None = None
     willing_to_relocate: bool | None = None
+    institution_name: str | None = Field(default=None, max_length=300)
+    experience_months: int | None = Field(default=None, ge=0, le=1200)
 
     @field_validator("date_of_birth")
     @classmethod
@@ -123,6 +125,8 @@ class ProfileUpdate(BaseModel):
     goals: str | None = Field(default=None, max_length=4000)
     requires_financial_aid: bool | None = None
     willing_to_relocate: bool | None = None
+    institution_name: str | None = Field(default=None, max_length=300)
+    experience_months: int | None = Field(default=None, ge=0, le=1200)
 
     @field_validator("date_of_birth")
     @classmethod

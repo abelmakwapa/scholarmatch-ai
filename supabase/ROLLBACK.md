@@ -3,6 +3,17 @@
 Supabase migrations are forward-only in shared environments. Prefer a corrective migration over
 rewriting or deleting an applied migration. Take a database backup before any destructive rollback.
 
+## `20260806000500_deterministic_matching.sql`
+
+Stop match workers before rollback. Export `matches` and `match_recalculation_jobs`, because the
+eligibility evidence and job state cannot be reconstructed without rerunning the same algorithm and
+inputs. Drop the recalculation-job trigger, policies, indexes, and table. Drop the partial ranking
+and version indexes, then remove `matches.eligibility_status` and
+`matches.missing_profile_fields`. Remove `profiles.institution_name` and
+`profiles.experience_months` only after exporting user data. Restore the previous requirement-field
+constraint only after proving no age, date-of-birth, country, institution, or experience-month rule
+exists. In a shared environment, use a corrective forward migration instead.
+
 ## `20260806000400_catalog_ingestion_pipeline.sql`
 
 Prefer a forward repair after any ingestion run has started. Stop workers and export

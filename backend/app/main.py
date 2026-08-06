@@ -30,6 +30,7 @@ from app.db.unit_of_work import PostgresDatabase
 from app.services.catalog import CatalogAdminService, CatalogService
 from app.services.documents import DocumentLimits, DocumentService
 from app.services.ingestion import IngestionAdminService
+from app.services.matches import MatchingService
 from app.services.profile import ProfileService
 from app.services.storage import PrivateDocumentStorage, SupabasePrivateDocumentStorage
 from app.services.work_queue import InMemoryWorkQueue, WorkQueue
@@ -107,6 +108,16 @@ def create_app(
     )
     application.state.ingestion_admin_service = (
         IngestionAdminService(database, queue) if database is not None else None
+    )
+    application.state.matching_service = (
+        MatchingService(
+            database,
+            queue,
+            weights=config.matching_weights,
+            immediate_limit=config.matching_immediate_limit,
+        )
+        if database is not None
+        else None
     )
     application.state.document_service = (
         DocumentService(

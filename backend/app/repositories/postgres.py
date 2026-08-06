@@ -14,6 +14,7 @@ from app.repositories.models import (
     AuditEventWrite,
     DocumentWrite,
     IngestionRunWrite,
+    MatchJobWrite,
     MatchWrite,
     NormalizedSourceWrite,
     ProfileWrite,
@@ -48,13 +49,14 @@ class PostgresProfileRepository(_PostgresRepository):
               id, full_name, country, study_level, field_of_study, gpa, gpa_scale,
               nationality_country, residence_country, date_of_birth, interests,
               target_countries, goals, requires_financial_aid, willing_to_relocate,
-              data_version
+              institution_name, experience_months, data_version
             ) values (
               %(id)s, %(full_name)s, %(country)s, %(study_level)s,
               %(field_of_study)s, %(gpa)s, %(gpa_scale)s, %(nationality_country)s,
               %(residence_country)s, %(date_of_birth)s, %(interests)s,
               %(target_countries)s, %(goals)s, %(requires_financial_aid)s,
-              %(willing_to_relocate)s, %(data_version)s
+              %(willing_to_relocate)s, %(institution_name)s, %(experience_months)s,
+              %(data_version)s
             )
             on conflict (id) do update set
               full_name = excluded.full_name,
@@ -71,6 +73,8 @@ class PostgresProfileRepository(_PostgresRepository):
               goals = excluded.goals,
               requires_financial_aid = excluded.requires_financial_aid,
               willing_to_relocate = excluded.willing_to_relocate,
+              institution_name = excluded.institution_name,
+              experience_months = excluded.experience_months,
               data_version = excluded.data_version
             returning *
             """,
@@ -90,6 +94,8 @@ class PostgresProfileRepository(_PostgresRepository):
                 "goals": profile.goals,
                 "requires_financial_aid": profile.requires_financial_aid,
                 "willing_to_relocate": profile.willing_to_relocate,
+                "institution_name": profile.institution_name,
+                "experience_months": profile.experience_months,
                 "data_version": profile.data_version,
             },
         )
@@ -228,14 +234,14 @@ class PostgresScholarshipReadRepository(_PostgresRepository):
         return [dict(row) for row in await result.fetchall()]
 
     async def requirements(self, scholarship_id: UUID) -> list[DatabaseRow]:
-        cursor = await self._connection.execute(
+        result = await self._connection.execute(
             """
             select * from public.scholarship_requirements
             where scholarship_id = %s order by position, id
             """,
             (scholarship_id,),
         )
-        return [dict(row) for row in await cursor.fetchall()]
+        return [dict(row) for row in await result.fetchall()]
 
     async def provenance(self, scholarship_id: UUID) -> list[DatabaseRow]:
         cursor = await self._connection.execute(
@@ -250,6 +256,51 @@ class PostgresScholarshipReadRepository(_PostgresRepository):
             (scholarship_id,),
         )
         return [dict(row) for row in await cursor.fetchall()]
+
+    async def list_for_matching(self, *, limit: int) -> list[DatabaseRow]:
+        cursor = await self._connection.execute(
+            """
+            select s.*, p.name as provider_name,
+              coalesce(
+                jsonb_agg(
+                  jsonb_build_object(
+                    'id', r.id,
+                    'constraint_type', r.constraint_type,
+                    'field', r.field,
+                    'operator', r.operator,
+                    'value', r.value,
+                    'source_evidence', r.source_evidence,
+                    'version', r.version,
+                    'position', r.position
+                  ) order by r.position, r.id
+                ) filter (where r.id is not null),
+                '[]'::jsonb
+              ) as requirements
+            from public.scholarships s
+            join public.scholarship_providers p on p.id = s.provider_id
+            left join public.scholarship_requirements r on r.scholarship_id = s.id
+            where s.status = 'published' and p.status = 'active'
+              and (s.deadline is null or s.deadline >= current_date)
+            group by s.id, p.name
+            order by s.id
+            limit %s
+            """,
+            (limit,),
+        )
+        return [dict(row) for row in await cursor.fetchall()]
+
+    async def count_for_matching(self) -> int:
+        cursor = await self._connection.execute(
+            """
+            select count(*) as count
+            from public.scholarships s
+            join public.scholarship_providers p on p.id = s.provider_id
+            where s.status = 'published' and p.status = 'active'
+              and (s.deadline is null or s.deadline >= current_date)
+            """
+        )
+        row = await cursor.fetchone()
+        return int(row["count"]) if row is not None else 0
 
 
 class PostgresCatalogAdminRepository(_PostgresRepository):
@@ -452,15 +503,73 @@ class PostgresCatalogAdminRepository(_PostgresRepository):
 
 
 class PostgresMatchReadRepository(_PostgresRepository):
-    async def list_for_profile(self, profile_id: UUID, *, limit: int = 20) -> list[DatabaseRow]:
+    async def get(self, profile_id: UUID, scholarship_id: UUID) -> DatabaseRow | None:
         cursor = await self._connection.execute(
             """
-            select * from public.matches
-            where profile_id = %s
-            order by total_score desc, id
+            select m.*, s.title, s.deadline, s.funding_type, p.name as provider_name
+            from public.matches m
+            join public.scholarships s on s.id = m.scholarship_id
+            join public.scholarship_providers p on p.id = s.provider_id
+            where m.profile_id = %s and m.scholarship_id = %s
+              and s.status = 'published' and p.status = 'active'
+              and (s.deadline is null or s.deadline >= current_date)
+            """,
+            (profile_id, scholarship_id),
+        )
+        return self._row(await cursor.fetchone())
+
+    async def list_for_profile(
+        self,
+        profile_id: UUID,
+        *,
+        cursor: dict[str, str] | None,
+        limit: int = 20,
+    ) -> list[DatabaseRow]:
+        cursor_clause = ""
+        parameters: list[object] = [profile_id]
+        if cursor is not None:
+            cursor_clause = (
+                "and (m.total_score < %s::numeric or (m.total_score = %s::numeric and m.id > %s))"
+            )
+            parameters.extend([cursor["score"], cursor["score"], cursor["id"]])
+        parameters.append(limit)
+        result = await self._connection.execute(
+            f"""
+            select m.*, s.title, s.deadline, s.funding_type, p.name as provider_name
+            from public.matches m
+            join public.scholarships s on s.id = m.scholarship_id
+            join public.scholarship_providers p on p.id = s.provider_id
+            where m.profile_id = %s
+              and m.eligibility_status <> 'ineligible'
+              and s.status = 'published' and p.status = 'active'
+              and (s.deadline is null or s.deadline >= current_date)
+              {cursor_clause}
+            order by m.total_score desc, m.id
             limit %s
             """,
-            (profile_id, limit),
+            parameters,
+        )
+        return [dict(row) for row in await result.fetchall()]
+
+    async def list_current(
+        self,
+        profile_id: UUID,
+        *,
+        profile_data_version: int,
+        algorithm_version: str,
+    ) -> list[DatabaseRow]:
+        cursor = await self._connection.execute(
+            """
+            select m.* from public.matches m
+            join public.scholarships s on s.id = m.scholarship_id
+            join public.scholarship_providers p on p.id = s.provider_id
+            where m.profile_id = %s and m.profile_data_version = %s
+              and m.algorithm_version = %s
+              and m.scholarship_data_version = s.data_version
+              and s.status = 'published' and p.status = 'active'
+              and (s.deadline is null or s.deadline >= current_date)
+            """,
+            (profile_id, profile_data_version, algorithm_version),
         )
         return [dict(row) for row in await cursor.fetchall()]
 
@@ -474,12 +583,14 @@ class PostgresMatchWriteRepository(_PostgresRepository):
               requirement_evidence, deterministic_explanation, ai_explanation,
               explanation_status, algorithm_version, embedding_version,
               profile_data_version, scholarship_data_version, stale_reasons, calculated_at
+              , eligibility_status, missing_profile_fields
             ) values (
               %(profile_id)s, %(scholarship_id)s, %(total_score)s, %(confidence)s,
               %(score_breakdown)s, %(requirement_evidence)s, %(deterministic_explanation)s,
               %(ai_explanation)s, %(explanation_status)s, %(algorithm_version)s,
               %(embedding_version)s, %(profile_data_version)s,
               %(scholarship_data_version)s, %(stale_reasons)s, %(calculated_at)s
+              , %(eligibility_status)s, %(missing_profile_fields)s
             )
             on conflict (profile_id, scholarship_id) do update set
               total_score = excluded.total_score,
@@ -493,6 +604,8 @@ class PostgresMatchWriteRepository(_PostgresRepository):
               embedding_version = excluded.embedding_version,
               profile_data_version = excluded.profile_data_version,
               scholarship_data_version = excluded.scholarship_data_version,
+              eligibility_status = excluded.eligibility_status,
+              missing_profile_fields = excluded.missing_profile_fields,
               stale_reasons = excluded.stale_reasons,
               calculated_at = excluded.calculated_at
             returning *
@@ -513,6 +626,8 @@ class PostgresMatchWriteRepository(_PostgresRepository):
                 "embedding_version": match.embedding_version,
                 "profile_data_version": match.profile_data_version,
                 "scholarship_data_version": match.scholarship_data_version,
+                "eligibility_status": match.eligibility_status,
+                "missing_profile_fields": match.missing_profile_fields,
                 "stale_reasons": Jsonb(match.stale_reasons),
                 "calculated_at": match.calculated_at,
             },
@@ -520,6 +635,53 @@ class PostgresMatchWriteRepository(_PostgresRepository):
         row = self._row(await cursor.fetchone())
         if row is None:
             raise RuntimeError("Match upsert returned no row")
+        return row
+
+    async def delete(self, profile_id: UUID, scholarship_id: UUID) -> None:
+        await self._connection.execute(
+            "delete from public.matches where profile_id = %s and scholarship_id = %s",
+            (profile_id, scholarship_id),
+        )
+
+    async def create_job(self, job: MatchJobWrite) -> DatabaseRow:
+        cursor = await self._connection.execute(
+            """
+            insert into public.match_recalculation_jobs (
+              profile_id, profile_data_version, algorithm_version, counters
+            ) values (%s, %s, %s, %s)
+            on conflict (profile_id, profile_data_version, algorithm_version) do update set
+              status = case
+                when match_recalculation_jobs.status in ('failed', 'cancelled') then 'queued'
+                else match_recalculation_jobs.status
+              end,
+              counters = case
+                when match_recalculation_jobs.status in ('failed', 'cancelled')
+                  then excluded.counters
+                else match_recalculation_jobs.counters
+              end,
+              safe_errors = case
+                when match_recalculation_jobs.status in ('failed', 'cancelled') then '[]'::jsonb
+                else match_recalculation_jobs.safe_errors
+              end
+            returning *
+            """,
+            (
+                job.profile_id,
+                job.profile_data_version,
+                job.algorithm_version,
+                Jsonb(
+                    {
+                        "candidates": job.candidate_count,
+                        "calculated": 0,
+                        "reused": 0,
+                        "excluded": 0,
+                    }
+                ),
+            ),
+        )
+        row = self._row(await cursor.fetchone())
+        if row is None:
+            raise RuntimeError("Match calculation job insert returned no row")
         return row
 
 

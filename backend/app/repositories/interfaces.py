@@ -8,6 +8,7 @@ from app.repositories.models import (
     AuditEventWrite,
     DocumentWrite,
     IngestionRunWrite,
+    MatchJobWrite,
     MatchWrite,
     NormalizedSourceWrite,
     ProfileWrite,
@@ -41,6 +42,10 @@ class ScholarshipReadRepository(Protocol):
 
     async def provenance(self, scholarship_id: UUID) -> list[DatabaseRow]: ...
 
+    async def list_for_matching(self, *, limit: int) -> list[DatabaseRow]: ...
+
+    async def count_for_matching(self) -> int: ...
+
 
 class CatalogAdminRepository(Protocol):
     async def get(self, scholarship_id: UUID) -> DatabaseRow | None: ...
@@ -71,11 +76,31 @@ class CatalogAdminRepository(Protocol):
 
 
 class MatchReadRepository(Protocol):
-    async def list_for_profile(self, profile_id: UUID, *, limit: int = 20) -> list[DatabaseRow]: ...
+    async def get(self, profile_id: UUID, scholarship_id: UUID) -> DatabaseRow | None: ...
+
+    async def list_for_profile(
+        self,
+        profile_id: UUID,
+        *,
+        cursor: dict[str, str] | None,
+        limit: int = 20,
+    ) -> list[DatabaseRow]: ...
+
+    async def list_current(
+        self,
+        profile_id: UUID,
+        *,
+        profile_data_version: int,
+        algorithm_version: str,
+    ) -> list[DatabaseRow]: ...
 
 
 class MatchWriteRepository(Protocol):
     async def upsert(self, match: MatchWrite) -> DatabaseRow: ...
+
+    async def delete(self, profile_id: UUID, scholarship_id: UUID) -> None: ...
+
+    async def create_job(self, job: MatchJobWrite) -> DatabaseRow: ...
 
 
 class ApplicationRepository(Protocol):
