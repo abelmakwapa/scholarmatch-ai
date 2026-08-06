@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 from uuid import UUID
 
@@ -79,3 +79,36 @@ class AuditEventWrite:
     target_name: str
     summary: str
     metadata: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class ProfileWrite:
+    full_name: str
+    country: str
+    study_level: str
+    field_of_study: str | None
+    gpa: float | None
+    gpa_scale: float | None
+    nationality_country: str | None
+    residence_country: str | None
+    date_of_birth: date | None
+    interests: list[str]
+    target_countries: list[str]
+    goals: str | None
+    requires_financial_aid: bool | None
+    willing_to_relocate: bool | None
+    data_version: int
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentWrite:
+    id: UUID
+    profile_id: UUID
+    storage_bucket: str
+    storage_object_path: str
+    document_type: str
+    display_name: str
+    original_filename: str
+    mime_type: str
+    size_bytes: int
+    checksum_sha256: str

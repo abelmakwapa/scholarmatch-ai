@@ -24,6 +24,17 @@ The PostgreSQL connection uses `DATABASE_URL`. The API validates Supabase access
 `SUPABASE_JWKS_URL` (or the URL derived from `SUPABASE_URL`) with issuer
 `SUPABASE_JWT_ISSUER` and audience `SUPABASE_JWT_AUDIENCE`.
 
+Profile and private-document endpoints are mounted under `/api/v1/profile`. The document flow is
+backend-mediated: configure a private `PRIVATE_DOCUMENT_BUCKET` and the service-role credential;
+clients never receive storage paths or permanent URLs. Uploads require a SHA-256 checksum and are
+bounded by the configured per-file, count, and total-byte quotas. Signed downloads expire after
+`DOCUMENT_DOWNLOAD_TTL_SECONDS`.
+
+Malware scanning, document processing, derived-content deletion, and rematching are dispatched
+through interfaces. The included in-memory queue adapter is deterministic and useful for local
+development/tests, but is not durable; production deployment must inject a worker-backed adapter
+before running more than one process.
+
 ## Verify
 
 ```bash
@@ -47,7 +58,7 @@ docker stop scholarmatch-postgres
 Supabase migration commands and the persistence documentation are in
 [`supabase/README.md`](../supabase/README.md).
 
-OpenAPI endpoints (`/docs`, `/redoc`, and `/openapi.json`) exist only in the
-`development` environment. The current work provides persistence and authorization infrastructure
-only. Profile/document services, scholarship endpoints, matching calculations, workers, storage,
-notifications, and external service clients remain intentionally unimplemented.
+OpenAPI endpoints (`/docs`, `/redoc`, and `/openapi.json`) exist only in the `development`
+environment. Matching calculations, durable worker implementations, derived text/embedding
+generation, scholarship/application API endpoints, notifications, and Qwen integration remain
+intentionally unimplemented.

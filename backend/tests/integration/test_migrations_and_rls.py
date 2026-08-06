@@ -2,6 +2,7 @@ import asyncio
 import json
 from collections.abc import Iterator
 from contextlib import contextmanager
+from dataclasses import replace
 from typing import Any
 from uuid import UUID
 
@@ -10,7 +11,7 @@ import pytest
 from app.auth.models import ApplicationRole, CurrentUser
 from app.db.principal import DatabasePrincipal
 from app.db.unit_of_work import PostgresDatabase
-from app.schemas.user import ProfileCreate
+from app.repositories.models import ProfileWrite
 from psycopg import errors, sql
 from psycopg.rows import DictRow, dict_row
 
@@ -113,7 +114,7 @@ def test_migrations_apply_from_empty(isolated_database_url: str) -> None:
 
 
 def test_authorization_migration_applies_to_previous_state(isolated_database_url: str) -> None:
-    foundation, authorization = MIGRATIONS
+    foundation, authorization, _ = MIGRATIONS
     with psycopg.connect(isolated_database_url, autocommit=True) as connection:
         apply_sql_file(connection, BOOTSTRAP)
         apply_sql_file(connection, foundation)
@@ -126,6 +127,25 @@ def test_authorization_migration_applies_to_previous_state(isolated_database_url
     _, rls_after, policies_after = _schema_state(isolated_database_url)
     assert rls_after == TABLES
     assert policies_after == EXPECTED_POLICIES
+
+
+def test_profile_document_migration_applies_to_previous_state(
+    isolated_database_url: str,
+) -> None:
+    foundation, authorization, vertical_slice = MIGRATIONS
+    with psycopg.connect(isolated_database_url, autocommit=True) as connection:
+        apply_sql_file(connection, BOOTSTRAP)
+        apply_sql_file(connection, foundation)
+        apply_sql_file(connection, authorization)
+        apply_sql_file(connection, vertical_slice)
+        columns = {
+            row[0]
+            for row in connection.execute(
+                "select column_name from information_schema.columns "
+                "where table_schema = 'public' and table_name = 'profiles'"
+            ).fetchall()
+        }
+    assert {"gpa_scale", "date_of_birth", "target_countries"} <= columns
 
 
 def _seed(database_url: str) -> None:
@@ -399,7 +419,7 @@ def test_known_query_indexes_exist(migrated_database_url: str) -> None:
         "applications_profile_created_idx",
         "applications_profile_deadline_idx",
         "applications_profile_status_idx",
-        "profile_documents_profile_created_idx",
+        "profile_documents_active_profile_created_idx",
         "ingestion_runs_status_created_idx",
         "audit_events_target_idx",
         "idempotency_keys_expires_idx",
@@ -422,14 +442,22 @@ def test_unit_of_work_commits_and_rolls_back_multi_table_mutations(
     async def scenario() -> None:
         database = PostgresDatabase(migrated_database_url, min_size=1, max_size=2)
         principal = DatabasePrincipal.for_user(CurrentUser(id=OWNER_ID, role=ApplicationRole.USER))
-        profile = ProfileCreate(
+        profile = ProfileWrite(
             full_name="Rolled Back",
             country="BW",
             study_level="undergraduate",
             field_of_study="Computer Science",
             gpa=3.5,
+            gpa_scale=4,
+            nationality_country=None,
+            residence_country=None,
+            date_of_birth=None,
             interests=["AI"],
+            target_countries=[],
             goals="Graduate study",
+            requires_financial_aid=None,
+            willing_to_relocate=None,
+            data_version=2,
         )
         await database.open()
         try:
@@ -453,7 +481,7 @@ def test_unit_of_work_commits_and_rolls_back_multi_table_mutations(
             assert rolled_back_notifications is not None
             assert rolled_back_notifications["timezone"] == "UTC"
 
-            committed_profile = profile.model_copy(update={"full_name": "Committed"})
+            committed_profile = replace(profile, full_name="Committed")
             async with database.unit_of_work(principal) as unit_of_work:
                 await unit_of_work.profiles.upsert(OWNER_ID, committed_profile)
                 await unit_of_work.notifications.upsert(

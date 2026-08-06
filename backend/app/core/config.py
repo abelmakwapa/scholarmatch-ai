@@ -1,3 +1,4 @@
+import re
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
@@ -49,6 +50,12 @@ class Settings(BaseSettings):
         "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
     )
     redis_url: str | None = None
+
+    private_document_bucket: str = "profile-documents"
+    document_max_size_bytes: int = 10 * 1024 * 1024
+    document_max_count: int = 25
+    document_quota_bytes: int = 100 * 1024 * 1024
+    document_download_ttl_seconds: int = 300
 
     cors_allowed_origins: list[str] = ["http://localhost:3000"]
 
@@ -155,6 +162,35 @@ class Settings(BaseSettings):
             raise ValueError("must be between 0.1 and 30 seconds")
         return value
 
+    @field_validator("private_document_bucket")
+    @classmethod
+    def validate_private_document_bucket(cls, value: str) -> str:
+        value = value.strip()
+        if not value or len(value) > 100 or not re.fullmatch(r"[a-z0-9][a-z0-9._-]*", value):
+            raise ValueError("must be a valid private storage bucket name")
+        return value
+
+    @field_validator("document_max_size_bytes", "document_quota_bytes")
+    @classmethod
+    def validate_document_byte_limit(cls, value: int) -> int:
+        if value < 1 or value > 1024 * 1024 * 1024:
+            raise ValueError("must be between 1 byte and 1 GiB")
+        return value
+
+    @field_validator("document_max_count")
+    @classmethod
+    def validate_document_count_limit(cls, value: int) -> int:
+        if value < 1 or value > 1000:
+            raise ValueError("must be between 1 and 1000")
+        return value
+
+    @field_validator("document_download_ttl_seconds")
+    @classmethod
+    def validate_document_download_ttl(cls, value: int) -> int:
+        if value < 30 or value > 900:
+            raise ValueError("must be between 30 and 900 seconds")
+        return value
+
     @field_validator("cors_allowed_origins")
     @classmethod
     def validate_cors_origins(cls, origins: list[str]) -> list[str]:
@@ -184,6 +220,8 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_environment_policy(self) -> "Settings":
+        if self.document_quota_bytes < self.document_max_size_bytes:
+            raise ValueError("document quota must be at least the maximum single-file size")
         if self.environment in {Environment.STAGING, Environment.PRODUCTION} and any(
             origin.startswith("http://") for origin in self.cors_allowed_origins
         ):

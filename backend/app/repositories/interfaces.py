@@ -6,11 +6,12 @@ from uuid import UUID
 from app.repositories.models import (
     ApplicationWrite,
     AuditEventWrite,
+    DocumentWrite,
     IngestionRunWrite,
     MatchWrite,
+    ProfileWrite,
     RequirementWrite,
 )
-from app.schemas.user import ProfileCreate
 
 DatabaseRow = dict[str, Any]
 
@@ -18,7 +19,7 @@ DatabaseRow = dict[str, Any]
 class ProfileRepository(Protocol):
     async def get(self, profile_id: UUID) -> DatabaseRow | None: ...
 
-    async def upsert(self, profile_id: UUID, profile: ProfileCreate) -> DatabaseRow: ...
+    async def upsert(self, profile_id: UUID, profile: ProfileWrite) -> DatabaseRow: ...
 
 
 class ScholarshipReadRepository(Protocol):
@@ -49,6 +50,22 @@ class ApplicationRepository(Protocol):
 
 class DocumentRepository(Protocol):
     async def list_for_profile(self, profile_id: UUID, *, limit: int = 20) -> list[DatabaseRow]: ...
+
+    async def usage_for_profile(self, profile_id: UUID) -> tuple[int, int]: ...
+
+    async def get_for_profile(self, document_id: UUID, profile_id: UUID) -> DatabaseRow | None: ...
+
+    async def create(self, document: DocumentWrite) -> DatabaseRow: ...
+
+    async def rename(
+        self, document_id: UUID, profile_id: UUID, display_name: str
+    ) -> DatabaseRow | None: ...
+
+    async def replace(
+        self, document_id: UUID, profile_id: UUID, document: DocumentWrite
+    ) -> DatabaseRow | None: ...
+
+    async def soft_delete(self, document_id: UUID, profile_id: UUID) -> DatabaseRow | None: ...
 
 
 class NotificationPreferenceRepository(Protocol):

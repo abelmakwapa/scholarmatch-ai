@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from dataclasses import asdict
 from datetime import datetime
 from uuid import UUID
 
@@ -10,11 +11,12 @@ from app.repositories.interfaces import DatabaseRow
 from app.repositories.models import (
     ApplicationWrite,
     AuditEventWrite,
+    DocumentWrite,
     IngestionRunWrite,
     MatchWrite,
+    ProfileWrite,
     RequirementWrite,
 )
-from app.schemas.user import ProfileCreate
 
 
 class _PostgresRepository:
@@ -34,15 +36,20 @@ class PostgresProfileRepository(_PostgresRepository):
         )
         return self._row(await cursor.fetchone())
 
-    async def upsert(self, profile_id: UUID, profile: ProfileCreate) -> DatabaseRow:
-        values = profile.model_dump()
+    async def upsert(self, profile_id: UUID, profile: ProfileWrite) -> DatabaseRow:
         cursor = await self._connection.execute(
             """
             insert into public.profiles (
-              id, full_name, country, study_level, field_of_study, gpa, interests, goals
+              id, full_name, country, study_level, field_of_study, gpa, gpa_scale,
+              nationality_country, residence_country, date_of_birth, interests,
+              target_countries, goals, requires_financial_aid, willing_to_relocate,
+              data_version
             ) values (
               %(id)s, %(full_name)s, %(country)s, %(study_level)s,
-              %(field_of_study)s, %(gpa)s, %(interests)s, %(goals)s
+              %(field_of_study)s, %(gpa)s, %(gpa_scale)s, %(nationality_country)s,
+              %(residence_country)s, %(date_of_birth)s, %(interests)s,
+              %(target_countries)s, %(goals)s, %(requires_financial_aid)s,
+              %(willing_to_relocate)s, %(data_version)s
             )
             on conflict (id) do update set
               full_name = excluded.full_name,
@@ -50,14 +57,35 @@ class PostgresProfileRepository(_PostgresRepository):
               study_level = excluded.study_level,
               field_of_study = excluded.field_of_study,
               gpa = excluded.gpa,
+              gpa_scale = excluded.gpa_scale,
+              nationality_country = excluded.nationality_country,
+              residence_country = excluded.residence_country,
+              date_of_birth = excluded.date_of_birth,
               interests = excluded.interests,
-              goals = excluded.goals
+              target_countries = excluded.target_countries,
+              goals = excluded.goals,
+              requires_financial_aid = excluded.requires_financial_aid,
+              willing_to_relocate = excluded.willing_to_relocate,
+              data_version = excluded.data_version
             returning *
             """,
             {
                 "id": profile_id,
-                **values,
-                "interests": Jsonb(values["interests"]),
+                "full_name": profile.full_name,
+                "country": profile.country,
+                "study_level": profile.study_level,
+                "field_of_study": profile.field_of_study,
+                "gpa": profile.gpa,
+                "gpa_scale": profile.gpa_scale,
+                "nationality_country": profile.nationality_country,
+                "residence_country": profile.residence_country,
+                "date_of_birth": profile.date_of_birth,
+                "interests": Jsonb(profile.interests),
+                "target_countries": profile.target_countries,
+                "goals": profile.goals,
+                "requires_financial_aid": profile.requires_financial_aid,
+                "willing_to_relocate": profile.willing_to_relocate,
+                "data_version": profile.data_version,
             },
         )
         row = self._row(await cursor.fetchone())
@@ -243,13 +271,111 @@ class PostgresDocumentRepository(_PostgresRepository):
         cursor = await self._connection.execute(
             """
             select * from public.profile_documents
-            where profile_id = %s
+            where profile_id = %s and deleted_at is null
             order by created_at desc, id
             limit %s
             """,
             (profile_id, limit),
         )
         return [dict(row) for row in await cursor.fetchall()]
+
+    async def usage_for_profile(self, profile_id: UUID) -> tuple[int, int]:
+        await self._connection.execute(
+            "select pg_advisory_xact_lock(hashtextextended(%s::text, 0))",
+            (profile_id,),
+        )
+        cursor = await self._connection.execute(
+            """
+            select
+              count(*)::integer as document_count,
+              coalesce(sum(size_bytes), 0)::bigint as bytes
+            from public.profile_documents
+            where profile_id = %s and deleted_at is null
+            """,
+            (profile_id,),
+        )
+        row = await cursor.fetchone()
+        if row is None:
+            return (0, 0)
+        return (int(row["document_count"]), int(row["bytes"]))
+
+    async def get_for_profile(self, document_id: UUID, profile_id: UUID) -> DatabaseRow | None:
+        cursor = await self._connection.execute(
+            """
+            select * from public.profile_documents
+            where id = %s and profile_id = %s and deleted_at is null
+            """,
+            (document_id, profile_id),
+        )
+        return self._row(await cursor.fetchone())
+
+    async def create(self, document: DocumentWrite) -> DatabaseRow:
+        cursor = await self._connection.execute(
+            """
+            insert into public.profile_documents (
+              id, profile_id, storage_bucket, storage_object_path, document_type,
+              display_name, original_filename, mime_type, size_bytes, checksum_sha256,
+              status, scan_status
+            ) values (
+              %(id)s, %(profile_id)s, %(storage_bucket)s, %(storage_object_path)s,
+              %(document_type)s, %(display_name)s, %(original_filename)s, %(mime_type)s,
+              %(size_bytes)s, %(checksum_sha256)s, 'uploaded', 'pending'
+            )
+            returning *
+            """,
+            asdict(document),
+        )
+        row = self._row(await cursor.fetchone())
+        if row is None:
+            raise RuntimeError("Document insert returned no row")
+        return row
+
+    async def rename(
+        self, document_id: UUID, profile_id: UUID, display_name: str
+    ) -> DatabaseRow | None:
+        cursor = await self._connection.execute(
+            """
+            update public.profile_documents set display_name = %s
+            where id = %s and profile_id = %s and deleted_at is null
+            returning *
+            """,
+            (display_name, document_id, profile_id),
+        )
+        return self._row(await cursor.fetchone())
+
+    async def replace(
+        self, document_id: UUID, profile_id: UUID, document: DocumentWrite
+    ) -> DatabaseRow | None:
+        cursor = await self._connection.execute(
+            """
+            update public.profile_documents set
+              storage_bucket = %(storage_bucket)s,
+              storage_object_path = %(storage_object_path)s,
+              original_filename = %(original_filename)s,
+              mime_type = %(mime_type)s,
+              size_bytes = %(size_bytes)s,
+              checksum_sha256 = %(checksum_sha256)s,
+              status = 'uploaded',
+              scan_status = 'pending',
+              replaced_at = statement_timestamp()
+            where id = %(id)s and profile_id = %(profile_id)s and deleted_at is null
+            returning *
+            """,
+            asdict(document),
+        )
+        return self._row(await cursor.fetchone())
+
+    async def soft_delete(self, document_id: UUID, profile_id: UUID) -> DatabaseRow | None:
+        cursor = await self._connection.execute(
+            """
+            update public.profile_documents set
+              status = 'deleted', deleted_at = statement_timestamp()
+            where id = %s and profile_id = %s and deleted_at is null
+            returning *
+            """,
+            (document_id, profile_id),
+        )
+        return self._row(await cursor.fetchone())
 
 
 class PostgresNotificationPreferenceRepository(_PostgresRepository):

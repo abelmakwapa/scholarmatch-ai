@@ -6,13 +6,13 @@ use explicit check constraints so invalid or differently-cased states cannot ent
 
 | Table | Ownership and purpose | Key relationships | Mutation and retention behavior |
 | --- | --- | --- | --- |
-| `profiles` | One private student profile per `auth.users` identity. | `id` is both the primary key and an `auth.users.id` foreign key. | User deletion cascades. `updated_at` tracks profile edits; `data_version` is reserved for future rematching invalidation. |
+| `profiles` | One private student profile per `auth.users` identity. | `id` is both the primary key and an `auth.users.id` foreign key. | User deletion cascades. `updated_at` tracks edits; matching-relevant changes advance `data_version`. |
 | `scholarship_providers` | Shared normalized provider catalog. | Referenced by `scholarships.provider_id`. | Providers cannot be deleted while scholarships reference them. Admins can insert/update but not delete. |
 | `scholarships` | Shared normalized scholarship catalog and provenance entry point. | Belongs to one provider; referenced by requirements, matches, and applications. | Admins update lifecycle state. Requirements and derived matches cascade on deletion; applications restrict deletion so tracked history is not silently lost. |
 | `scholarship_requirements` | Ordered, versioned hard/soft eligibility rules. | Belongs to one scholarship. | Cascades with scholarship. Admin replacement can delete/insert requirements; direct user mutation is denied. |
 | `matches` | Private materialized match result; no calculation logic is implemented here. | Belongs to a profile and scholarship; unique per pair. | Profile or scholarship deletion removes derived matches. Only owners can read; backend service authorization controls writes. |
 | `applications` | Private application tracking state, checklist, history, and reminder. | Belongs to a profile and scholarship; unique per pair. | Profile deletion cascades. Scholarship deletion is restricted. Owner CRUD is allowed by RLS. |
-| `profile_documents` | Private document metadata; object bytes remain in private Supabase Storage. | Belongs to a profile; storage bucket/path is unique. | Profile deletion cascades metadata. Object deletion/storage cleanup remains a later service concern. |
+| `profile_documents` | Private document metadata; object bytes remain in private Supabase Storage. | Belongs to a profile; storage bucket/path is unique. | Profile deletion cascades metadata. A deletion tombstone coordinates object and derived-content cleanup. |
 | `notification_preferences` | One private notification configuration per profile. | `profile_id` is the primary key and references `profiles.id`. | Profile deletion cascades. Owner CRUD is allowed by RLS. |
 | `ingestion_runs` | Admin-only ingestion queue/history with sanitized counters and errors. | Optional self-reference identifies the original run; `created_by` references Auth. | Retry source uses `ON DELETE SET NULL`. Admins can insert/update, but not delete. |
 | `audit_events` | Append-only administrative catalog/ingestion audit trail. | Actor references Auth with `ON DELETE SET NULL`; target is a polymorphic UUID. | A trigger rejects updates and deletes. Admins can insert/select only. |
@@ -28,8 +28,11 @@ allowed. JSON values are constrained to the documented top-level shape.
 
 - `id`: Auth user UUID and row owner. `full_name`, `country`: display name and ISO 3166-1 alpha-2
   country. `study_level`: `undergraduate`, `postgraduate`, `doctoral`, or `other`.
-- `field_of_study`, `gpa`, `goals`: optional academic profile fields; GPA is bounded to 0–4.
-  `interests`: bounded JSON array. `data_version`: positive revision used by future rematching.
+- `field_of_study`, `goals`: optional academic profile fields. `gpa` and `gpa_scale` are both null
+  for unknown GPA, or both present with `gpa <= gpa_scale`.
+- `nationality_country`, `residence_country`, `date_of_birth`, `requires_financial_aid`, and
+  `willing_to_relocate` are nullable so unknown remains distinct from explicit `false`.
+  `interests` and `target_countries` are bounded arrays. `data_version` is the matching-input revision.
 
 ### `scholarship_providers`
 
@@ -85,8 +88,9 @@ allowed. JSON values are constrained to the documented top-level shape.
 - `document_type`: normalized transcript/CV/letter/statement/identity/financial/other category.
   `display_name`, `original_filename`, `mime_type`, `size_bytes`, `checksum_sha256`: validated
   metadata only; file bytes are not stored here.
-- `status`: `pending`, `scanning`, `processing`, `ready`, `rejected`, or `failed`. `scan_status`:
-  `pending`, `clean`, `infected`, or `failed`. `replaced_at`: optional replacement time.
+- `status`: `uploaded`, `scanning`, `ready`, `rejected`, or `deleted`. `scan_status`: `pending`,
+  `clean`, `infected`, or `failed`. `replaced_at` records safe replacement and `deleted_at` is the
+  cleanup tombstone. Active owner query indexes exclude tombstones.
 
 ### `notification_preferences`
 

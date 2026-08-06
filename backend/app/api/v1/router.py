@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
+from app.api.v1.endpoints.profile_documents import router as profile_documents_router
+
 api_router = APIRouter()
 
-# Endpoints will be mounted here as domains are implemented.
-# from app.api.v1.endpoints import matching, profiles, scholarships
-# api_router.include_router(profiles.router, prefix="/profiles", tags=["Profiles"])
+api_router.include_router(profile_documents_router)

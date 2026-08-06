@@ -1,5 +1,6 @@
 import re
-from collections.abc import Awaitable, Callable, Mapping
+from collections.abc import AsyncIterator, Awaitable, Callable, Mapping
+from contextlib import asynccontextmanager
 from time import perf_counter
 from uuid import uuid4
 
@@ -10,6 +11,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.router import api_router
+from app.auth.dependencies import AccessTokenVerifier
 from app.auth.jwks import JWKSCache, JWKSCachePolicy, UrlLibJWKSFetcher
 from app.auth.jwt import JWTVerifier
 from app.core.config import Settings, get_settings
@@ -23,6 +25,12 @@ from app.core.errors import (
 )
 from app.core.logging import configure_logging
 from app.core.readiness import ReadinessCheck, default_readiness_checks, evaluate_readiness
+from app.db.protocols import Database
+from app.db.unit_of_work import PostgresDatabase
+from app.services.documents import DocumentLimits, DocumentService
+from app.services.profile import ProfileService
+from app.services.storage import PrivateDocumentStorage, SupabasePrivateDocumentStorage
+from app.services.work_queue import InMemoryWorkQueue, WorkQueue
 
 APP_VERSION = "0.1.0"
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
@@ -45,11 +53,39 @@ def create_app(
     *,
     settings: Settings | None = None,
     readiness_checks: Mapping[str, ReadinessCheck] | None = None,
-    jwt_verifier: JWTVerifier | None = None,
+    jwt_verifier: AccessTokenVerifier | None = None,
+    database: Database | None = None,
+    document_storage: PrivateDocumentStorage | None = None,
+    work_queue: WorkQueue | None = None,
 ) -> FastAPI:
     config = settings or get_settings()
     logger = configure_logging(config.log_level.value)
     openapi_url = "/openapi.json" if config.openapi_enabled else None
+
+    owned_database: PostgresDatabase | None = None
+    if database is None and config.database_url is not None:
+        owned_database = PostgresDatabase.from_settings(config)
+        database = owned_database
+    if (
+        document_storage is None
+        and config.supabase_url is not None
+        and config.supabase_service_role_key is not None
+    ):
+        document_storage = SupabasePrivateDocumentStorage(
+            config.supabase_url,
+            config.supabase_service_role_key.get_secret_value(),
+        )
+    queue = work_queue or InMemoryWorkQueue()
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        if owned_database is not None:
+            await owned_database.open()
+        try:
+            yield
+        finally:
+            if owned_database is not None:
+                await owned_database.close()
 
     application = FastAPI(
         title=config.project_name,
@@ -57,8 +93,28 @@ def create_app(
         docs_url="/docs" if config.openapi_enabled else None,
         redoc_url="/redoc" if config.openapi_enabled else None,
         openapi_url=openapi_url,
+        lifespan=lifespan,
     )
     application.state.settings = config
+    application.state.profile_service = (
+        ProfileService(database, queue) if database is not None else None
+    )
+    application.state.document_service = (
+        DocumentService(
+            database,
+            document_storage,
+            queue,
+            DocumentLimits(
+                bucket=config.private_document_bucket,
+                maximum_size_bytes=config.document_max_size_bytes,
+                maximum_document_count=config.document_max_count,
+                total_quota_bytes=config.document_quota_bytes,
+                download_ttl_seconds=config.document_download_ttl_seconds,
+            ),
+        )
+        if database is not None and document_storage is not None
+        else None
+    )
     configured_checks = (
         readiness_checks if readiness_checks is not None else default_readiness_checks(config)
     )

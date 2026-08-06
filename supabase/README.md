@@ -1,7 +1,8 @@
 # Supabase persistence foundation
 
 Migrations live in `migrations/` and are applied in lexical timestamp order. The first migration
-creates the normalized PostgreSQL schema; the second adds grants and RLS policies. The test-only
+creates the normalized PostgreSQL schema; the second adds grants and RLS policies; the third adds
+the versioned profile inputs and private-document lifecycle. The test-only
 `tests/bootstrap_local_postgres.sql` supplies the Supabase roles and Auth helper functions when the
 suite runs against vanilla PostgreSQL. It is never applied to a Supabase project.
 
