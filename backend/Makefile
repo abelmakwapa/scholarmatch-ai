@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: install run format format-check lint typecheck test build quality
+.PHONY: install run format format-check lint typecheck test test-db build quality
 
 install:
 	$(PYTHON) -m pip install -r requirements-dev.txt
@@ -23,6 +23,10 @@ typecheck:
 
 test:
 	$(PYTHON) -m pytest -q
+
+test-db:
+	@test -n "$(TEST_DATABASE_URL)" || (echo "TEST_DATABASE_URL is required" && exit 2)
+	TEST_DATABASE_URL="$(TEST_DATABASE_URL)" $(PYTHON) -m pytest -q -m postgres
 
 build:
 	$(PYTHON) -m compileall -q -f app

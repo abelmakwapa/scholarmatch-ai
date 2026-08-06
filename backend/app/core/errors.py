@@ -15,6 +15,26 @@ class ErrorDetail(TypedDict):
     message: str
 
 
+class ApiError(Exception):
+    """An expected error with a stable, client-safe API representation."""
+
+    def __init__(
+        self,
+        *,
+        status_code: int,
+        code: str,
+        message: str,
+        details: list[ErrorDetail] | None = None,
+        headers: Mapping[str, str] | None = None,
+    ) -> None:
+        super().__init__(code)
+        self.status_code = status_code
+        self.code = code
+        self.message = message
+        self.details = details or []
+        self.headers = dict(headers or {})
+
+
 def request_id_for(request: Request) -> str:
     return getattr(request.state, "request_id", str(uuid4()))
 
@@ -83,5 +103,18 @@ async def http_exception_handler(request: Request, exc: Exception) -> JSONRespon
         status_code=exc.status_code,
         code=f"HTTP_{exc.status_code}",
         message=message,
+        headers=exc.headers,
+    )
+
+
+async def api_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, ApiError):
+        raise TypeError("Unexpected exception handler registration")
+    return error_response(
+        request,
+        status_code=exc.status_code,
+        code=exc.code,
+        message=exc.message,
+        details=exc.details,
         headers=exc.headers,
     )

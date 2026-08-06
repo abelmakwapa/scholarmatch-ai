@@ -14,12 +14,15 @@ def _configured_check(configured: bool) -> ReadinessCheck:
 
 def default_readiness_checks(settings: Settings) -> dict[str, ReadinessCheck]:
     return {
+        "postgres": _configured_check(settings.database_url is not None),
         "qwen": _configured_check(settings.qwen_api_key is not None),
         "redis": _configured_check(settings.redis_url is not None),
-        "supabase": _configured_check(
+        "supabase_auth": _configured_check(
             settings.supabase_url is not None
             and settings.supabase_anon_key is not None
             and settings.supabase_service_role_key is not None
+            and settings.jwt_issuer is not None
+            and settings.jwks_url is not None
         ),
     }
 

@@ -10,9 +10,13 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.v1.router import api_router
+from app.auth.jwks import JWKSCache, JWKSCachePolicy, UrlLibJWKSFetcher
+from app.auth.jwt import JWTVerifier
 from app.core.config import Settings, get_settings
 from app.core.errors import (
+    ApiError,
     ErrorDetail,
+    api_exception_handler,
     error_response,
     http_exception_handler,
     validation_exception_handler,
@@ -41,6 +45,7 @@ def create_app(
     *,
     settings: Settings | None = None,
     readiness_checks: Mapping[str, ReadinessCheck] | None = None,
+    jwt_verifier: JWTVerifier | None = None,
 ) -> FastAPI:
     config = settings or get_settings()
     logger = configure_logging(config.log_level.value)
@@ -58,6 +63,22 @@ def create_app(
         readiness_checks if readiness_checks is not None else default_readiness_checks(config)
     )
     application.state.readiness_checks = dict(configured_checks)
+    if jwt_verifier is None and config.jwt_issuer is not None and config.jwks_url is not None:
+        jwt_verifier = JWTVerifier(
+            JWKSCache(
+                UrlLibJWKSFetcher(
+                    config.jwks_url,
+                    timeout_seconds=config.jwks_http_timeout_seconds,
+                ),
+                policy=JWKSCachePolicy(
+                    fresh_seconds=config.jwks_cache_ttl_seconds,
+                    max_stale_seconds=config.jwks_max_stale_seconds,
+                ),
+            ),
+            issuer=config.jwt_issuer,
+            audience=config.supabase_jwt_audience,
+        )
+    application.state.jwt_verifier = jwt_verifier
 
     application.add_middleware(
         CORSMiddleware,
@@ -102,6 +123,7 @@ def create_app(
 
     application.add_exception_handler(RequestValidationError, validation_exception_handler)
     application.add_exception_handler(StarletteHTTPException, http_exception_handler)
+    application.add_exception_handler(ApiError, api_exception_handler)
 
     @application.exception_handler(Exception)
     async def unexpected_exception_handler(request: Request, exc: Exception) -> JSONResponse:

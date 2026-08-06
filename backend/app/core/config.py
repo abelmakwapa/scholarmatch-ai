@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     supabase_url: str | None = None
     supabase_anon_key: SecretStr | None = None
     supabase_service_role_key: SecretStr | None = None
+    database_url: SecretStr | None = None
+    supabase_jwt_issuer: str | None = None
+    supabase_jwks_url: str | None = None
+    supabase_jwt_audience: str = "authenticated"
+    jwks_cache_ttl_seconds: int = 300
+    jwks_max_stale_seconds: int = 3600
+    jwks_http_timeout_seconds: float = 5.0
     qwen_api_key: SecretStr | None = None
     qwen_api_url: str = (
         "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
@@ -56,6 +63,9 @@ class Settings(BaseSettings):
         "supabase_url",
         "supabase_anon_key",
         "supabase_service_role_key",
+        "database_url",
+        "supabase_jwt_issuer",
+        "supabase_jwks_url",
         "qwen_api_key",
         "redis_url",
         mode="before",
@@ -79,7 +89,12 @@ class Settings(BaseSettings):
             raise ValueError("must start with '/' and must not end with '/'")
         return value
 
-    @field_validator("supabase_url", "qwen_api_url")
+    @field_validator(
+        "supabase_url",
+        "supabase_jwt_issuer",
+        "supabase_jwks_url",
+        "qwen_api_url",
+    )
     @classmethod
     def validate_http_url(cls, value: str | None) -> str | None:
         if value is None:
@@ -99,6 +114,45 @@ class Settings(BaseSettings):
         parsed = urlsplit(value)
         if parsed.scheme not in {"redis", "rediss"} or not parsed.hostname:
             raise ValueError("must be an absolute Redis URL")
+        return value
+
+    @field_validator("database_url")
+    @classmethod
+    def validate_database_url(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is None:
+            return None
+        parsed = urlsplit(value.get_secret_value())
+        if parsed.scheme not in {"postgres", "postgresql"} or not parsed.hostname:
+            raise ValueError("must be an absolute PostgreSQL URL")
+        return value
+
+    @field_validator("supabase_jwt_audience")
+    @classmethod
+    def validate_jwt_audience(cls, value: str) -> str:
+        value = value.strip()
+        if not value or len(value) > 200:
+            raise ValueError("must contain between 1 and 200 characters")
+        return value
+
+    @field_validator("jwks_cache_ttl_seconds")
+    @classmethod
+    def validate_jwks_cache_ttl(cls, value: int) -> int:
+        if value < 30 or value > 86400:
+            raise ValueError("must be between 30 and 86400 seconds")
+        return value
+
+    @field_validator("jwks_max_stale_seconds")
+    @classmethod
+    def validate_jwks_max_stale(cls, value: int) -> int:
+        if value < 0 or value > 604800:
+            raise ValueError("must be between 0 and 604800 seconds")
+        return value
+
+    @field_validator("jwks_http_timeout_seconds")
+    @classmethod
+    def validate_jwks_timeout(cls, value: float) -> float:
+        if value < 0.1 or value > 30:
+            raise ValueError("must be between 0.1 and 30 seconds")
         return value
 
     @field_validator("cors_allowed_origins")
@@ -139,6 +193,22 @@ class Settings(BaseSettings):
     @property
     def openapi_enabled(self) -> bool:
         return self.environment is Environment.DEVELOPMENT
+
+    @property
+    def jwt_issuer(self) -> str | None:
+        if self.supabase_jwt_issuer is not None:
+            return self.supabase_jwt_issuer
+        if self.supabase_url is None:
+            return None
+        return f"{self.supabase_url}/auth/v1"
+
+    @property
+    def jwks_url(self) -> str | None:
+        if self.supabase_jwks_url is not None:
+            return self.supabase_jwks_url
+        if self.supabase_url is None:
+            return None
+        return f"{self.supabase_url}/auth/v1/.well-known/jwks.json"
 
 
 def _validation_fields(exc: ValidationError) -> str:

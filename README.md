@@ -5,10 +5,10 @@ ScholarMatch AI helps students find scholarships for which they are eligible and
 ## Repository layout
 
 - `frontend/` — Next.js 16, React 19, and TypeScript web application.
-- `backend/` — FastAPI application scaffold and Python quality tooling.
+- `backend/` — typed FastAPI application and PostgreSQL repository foundation.
 - `docs/openapi.yaml` — source-of-truth `/api/v1` HTTP contract shared by both services.
 - `docs/adr/` — accepted architecture decision records.
-- `supabase/` — future database migrations and local Supabase configuration.
+- `supabase/` — PostgreSQL migrations, RLS policies, data dictionary, and rollback notes.
 
 See [Technology Stack and Backend Architecture](docs/TECH_STACK_AND_ARCHITECTURE.md) and [Development Prompts and Delivery Timeline](docs/DEVELOPMENT_PROMPTS_AND_TIMELINE.md).
 
@@ -65,6 +65,13 @@ Backend variables in `backend/app/.env`:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `DATABASE_URL`
+- `SUPABASE_JWT_ISSUER` (optional override)
+- `SUPABASE_JWKS_URL` (optional override)
+- `SUPABASE_JWT_AUDIENCE`
+- `JWKS_CACHE_TTL_SECONDS`
+- `JWKS_MAX_STALE_SECONDS`
+- `JWKS_HTTP_TIMEOUT_SECONDS`
 - `QWEN_API_KEY`
 - `QWEN_API_URL`
 - `REDIS_URL`
@@ -101,6 +108,10 @@ make typecheck
 make test
 make build
 ```
+
+Run the isolated PostgreSQL migration, RLS, index, and unit-of-work tests with
+`TEST_DATABASE_URL=<disposable-admin-dsn> make test-db`. See
+[`supabase/README.md`](supabase/README.md) before applying migrations.
 
 Use `npm run format` and `make format` to apply automatic formatting. `make quality`
 runs every backend verification check. The OpenAPI contract is currently checked in
