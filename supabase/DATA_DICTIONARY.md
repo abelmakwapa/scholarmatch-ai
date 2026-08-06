@@ -17,6 +17,11 @@ use explicit check constraints so invalid or differently-cased states cannot ent
 | `ingestion_runs` | Admin-only ingestion queue/history with sanitized counters and errors. | Optional self-reference identifies the original run; `created_by` references Auth. | Retry source uses `ON DELETE SET NULL`. Admins can insert/update, but not delete. |
 | `audit_events` | Append-only administrative catalog/ingestion audit trail. | Actor references Auth with `ON DELETE SET NULL`; target is a polymorphic UUID. | A trigger rejects updates and deletes. Admins can insert/select only. |
 | `idempotency_keys` | Backend-only durable request replay state. | Belongs directly to an Auth actor; unique by actor, operation, and key. | User deletion cascades. Only the service role can access rows, and Python service authorization further limits use. |
+| `ingestion_raw_records` | Immutable JSON objects returned by an approved adapter; never exposed through the public API. | Belongs to an ingestion run; unique within that run by source, source record ID, and content hash. | Updates/deletes are rejected. Run deletion is restricted. Service role only. |
+| `scholarship_sources` | Current source identity and explainable fingerprint for a normalized scholarship. | Belongs to one scholarship and references the latest immutable raw record. | Source URL and source-record identity are unique. Public responses receive only a sanitized projection. |
+| `scholarship_field_history` | Immutable field-level changes detected between source versions. | Belongs to a scholarship and optionally references raw evidence and an admin actor. | Append-only. Admin read only; ingestion service writes. |
+| `ingestion_quarantine` | Immutable rejected or ambiguous source records with safe reason codes. | Belongs to a run, optionally references raw evidence, and may list bounded candidate UUIDs. | Append-only. Admin read only; raw payload remains service-role only. |
+| `ingestion_items` | Durable per-record processing checkpoint and dead-letter state. | Belongs to a run and one immutable raw record; may reference the resulting scholarship. | State and attempt counters support resumable batches. |
 
 ## Column dictionary
 
@@ -37,7 +42,8 @@ allowed. JSON values are constrained to the documented top-level shape.
 ### `scholarship_providers`
 
 - `id`: generated UUID. `name`: case-insensitively unique provider name. `website_url`: optional
-  HTTPS URL. `status`: `active` or `inactive`.
+  HTTPS URL. `canonical_name`: normalized provider identity for deterministic upserts. `status`:
+  `active` or `inactive`.
 
 ### `scholarships`
 
@@ -52,7 +58,8 @@ allowed. JSON values are constrained to the documented top-level shape.
 - `source_url`: unique authoritative HTTPS source. `application_url`: optional external application
   URL. `reviewer_notes`: private admin notes.
 - `status`: `draft`, `in_review`, `published`, `unpublished`, `expired`, or `archived`.
-  `verified_at`, `published_at`: optional lifecycle instants. `data_version`: positive catalog revision.
+  `verified_at`, `published_at`: optional lifecycle instants. `data_version`: positive catalog
+  revision. `source_fingerprint`: optional SHA-256 of documented normalized identity fields.
 
 ### `scholarship_requirements`
 
@@ -101,10 +108,48 @@ allowed. JSON values are constrained to the documented top-level shape.
 ### `ingestion_runs`
 
 - `id`: generated UUID. `source`, optional `source_url`, `dry_run`: requested ingestion source.
-- `status`: `queued`, `running`, `completed`, `failed`, or `cancelled`. `counters`: JSON object;
-  `safe_errors`: sanitized JSON array that must not contain credentials or raw stack traces.
+- `adapter_version`, `source_version`: reproducibility identifiers. `idempotency_key`: source-scoped
+  replay key. `batch_size`, `resume_cursor`, `attempt_count`, `last_heartbeat_at`: durable worker
+  checkpoint fields.
+- `status`: `queued`, `running`, `partial`, `completed`, `failed`, `dead_lettered`, or `cancelled`.
+  `counters`: JSON object; `safe_errors`: sanitized JSON that must not contain credentials, raw
+  payloads, exception text, or stack traces.
 - `original_run_id`: optional retry lineage. `created_by`: nullable admin actor. `started_at`,
   `completed_at`: optional execution timeline.
+
+### `ingestion_raw_records`
+
+- `run_id`, `source`, `source_record_id`, `source_version`: immutable source/run identity.
+- `source_url`: canonical HTTPS URL. `content_sha256`: payload digest. `payload`: raw JSON restricted
+  to the backend service role.
+- `fetched_at`, `terms_checked_at`, `robots_allowed`: source-compliance evidence.
+
+### `scholarship_sources`
+
+- `scholarship_id`, `raw_record_id`: normalized record and latest raw evidence.
+- `source`, `source_record_id`, `canonical_url`: stable source identity. `fingerprint`: normalized
+  SHA-256 used only to flag potential duplicates; it never triggers an automatic merge.
+- `trusted`: permits automatic publication only for an explicitly trusted adapter. The included
+  fixture adapter is not trusted. `active`, `first_seen_at`, `last_seen_at`: source lifecycle.
+
+### `scholarship_field_history`
+
+- `scholarship_id`, optional `raw_record_id`: changed record and evidence.
+- `field_name`, `old_value`, `new_value`: one immutable normalized field change.
+- `change_source`: `ingestion` or `administrator`; optional `changed_by` identifies the actor.
+
+### `ingestion_quarantine`
+
+- `run_id`, optional `raw_record_id`: run and evidence. `reason_code`, `safe_summary`: stable,
+  non-sensitive rejection information.
+- `fingerprint`, `candidate_scholarship_ids`: bounded duplicate-review context. A match creates
+  review work and never silently merges records.
+
+### `ingestion_items`
+
+- `run_id`, `raw_record_id`, `batch_number`, `position`: deterministic resume identity.
+- `status`: `pending`, `processing`, `completed`, `rejected`, or `dead_letter`.
+- `attempt_count`, optional safe error fields, and optional `scholarship_id`: retry/result state.
 
 ### `audit_events`
 
@@ -127,6 +172,8 @@ allowed. JSON values are constrained to the documented top-level shape.
 - Match indexes support owner-scoped descending score pagination and profile/scholarship lookup.
 - Application indexes support owner pagination, chronological deadlines, and status workspaces.
 - Document, ingestion, and audit indexes support their documented owner/admin timelines.
+- Raw-source, fingerprint, quarantine, and partial item indexes support the ingestion query shapes;
+  raw JSON fields are deliberately not indexed.
 - The idempotency expiry index supports bounded cleanup; the unique key supports replay lookup.
 
 No vector index is included. Matching calculations and embedding persistence remain intentionally

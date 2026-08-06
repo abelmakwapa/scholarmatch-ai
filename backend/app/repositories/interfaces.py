@@ -9,9 +9,13 @@ from app.repositories.models import (
     DocumentWrite,
     IngestionRunWrite,
     MatchWrite,
+    NormalizedSourceWrite,
     ProfileWrite,
+    RawSourceRecordWrite,
     RequirementWrite,
+    ScholarshipWrite,
 )
+from app.schemas.scholarship import CatalogFilters
 
 DatabaseRow = dict[str, Any]
 
@@ -25,10 +29,42 @@ class ProfileRepository(Protocol):
 class ScholarshipReadRepository(Protocol):
     async def get_published(self, scholarship_id: UUID) -> DatabaseRow | None: ...
 
-    async def list_published(self, *, limit: int = 20) -> list[DatabaseRow]: ...
+    async def list_published(
+        self,
+        filters: CatalogFilters,
+        *,
+        cursor: dict[str, str] | None,
+        limit: int = 20,
+    ) -> list[DatabaseRow]: ...
+
+    async def requirements(self, scholarship_id: UUID) -> list[DatabaseRow]: ...
+
+    async def provenance(self, scholarship_id: UUID) -> list[DatabaseRow]: ...
 
 
 class CatalogAdminRepository(Protocol):
+    async def get(self, scholarship_id: UUID) -> DatabaseRow | None: ...
+
+    async def list_all(self, *, limit: int = 20) -> list[DatabaseRow]: ...
+
+    async def create(self, scholarship: ScholarshipWrite) -> DatabaseRow: ...
+
+    async def update(
+        self, scholarship_id: UUID, expected_version: int, changes: dict[str, Any]
+    ) -> DatabaseRow | None: ...
+
+    async def transition(
+        self,
+        scholarship_id: UUID,
+        expected_version: int,
+        *,
+        from_status: str,
+        to_status: str,
+        mark_verified: bool,
+        clear_verification: bool,
+        reviewer_notes: str | None,
+    ) -> DatabaseRow | None: ...
+
     async def replace_requirements(
         self, scholarship_id: UUID, requirements: Sequence[RequirementWrite]
     ) -> list[DatabaseRow]: ...
@@ -84,6 +120,55 @@ class NotificationPreferenceRepository(Protocol):
 
 class IngestionRunRepository(Protocol):
     async def create(self, run: IngestionRunWrite) -> DatabaseRow: ...
+
+    async def get(self, run_id: UUID) -> DatabaseRow | None: ...
+
+    async def list_recent(self, *, limit: int = 20) -> list[DatabaseRow]: ...
+
+    async def claim(self, run_id: UUID) -> DatabaseRow | None: ...
+
+    async def store_raw(
+        self, run_id: UUID, position: int, batch_number: int, record: RawSourceRecordWrite
+    ) -> DatabaseRow: ...
+
+    async def apply_normalized(
+        self,
+        run_id: UUID,
+        raw_record_id: UUID,
+        normalized: NormalizedSourceWrite,
+        *,
+        dry_run: bool,
+    ) -> str: ...
+
+    async def reject(
+        self,
+        run_id: UUID,
+        raw_record_id: UUID | None,
+        *,
+        reason_code: str,
+        safe_summary: str,
+        fingerprint: str | None = None,
+        candidates: Sequence[UUID] = (),
+    ) -> None: ...
+
+    async def fail_item(
+        self,
+        run_id: UUID,
+        raw_record_id: UUID,
+        *,
+        safe_error_code: str,
+        safe_error_summary: str,
+    ) -> bool: ...
+
+    async def advance(
+        self,
+        run_id: UUID,
+        *,
+        resume_cursor: int,
+        counters: dict[str, int],
+        status: str,
+        safe_errors: list[dict[str, Any]] | None = None,
+    ) -> DatabaseRow: ...
 
 
 class AuditEventRepository(Protocol):

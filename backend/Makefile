@@ -1,12 +1,16 @@
 PYTHON ?= python3
 
-.PHONY: install run format format-check lint typecheck test test-db build quality
+.PHONY: install run run-ingestion format format-check lint typecheck test test-db build quality
 
 install:
 	$(PYTHON) -m pip install -r requirements-dev.txt
 
 run:
 	$(PYTHON) -m uvicorn app.main:app --reload --port 8000
+
+run-ingestion:
+	@test -n "$(RUN_ID)" || (echo "RUN_ID is required" && exit 2)
+	$(PYTHON) -m app.worker --run-id "$(RUN_ID)"
 
 format:
 	$(PYTHON) -m ruff format app tests

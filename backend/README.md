@@ -35,6 +35,24 @@ through interfaces. The included in-memory queue adapter is deterministic and us
 development/tests, but is not durable; production deployment must inject a worker-backed adapter
 before running more than one process.
 
+The public catalog endpoints are `GET /api/v1/scholarships` and
+`GET /api/v1/scholarships/{scholarship_id}`. They return active, published, unexpired records and
+use opaque, sort-bound cursor pagination. Catalog administration and deterministic fixture
+ingestion are under `/api/v1/admin`; both require a verified application-admin JWT. The fixture
+adapter is the only included source adapter, is untrusted, performs no network scraping, and
+requires review before publication. Production must inject a durable queue consumer; database
+claims, resume cursors, bounded attempts, quarantine, and dead-letter state form the worker-safe
+boundary.
+
+After an admin queues a deterministic fixture run, process one resumable batch locally with:
+
+```bash
+make run-ingestion RUN_ID=00000000-0000-0000-0000-000000000000
+```
+
+Repeat while the sanitized status is `partial`. The command selects only the fixture version
+recorded on the run and refuses unapproved adapters.
+
 ## Verify
 
 ```bash
@@ -59,6 +77,6 @@ Supabase migration commands and the persistence documentation are in
 [`supabase/README.md`](../supabase/README.md).
 
 OpenAPI endpoints (`/docs`, `/redoc`, and `/openapi.json`) exist only in the `development`
-environment. Matching calculations, durable worker implementations, derived text/embedding
-generation, scholarship/application API endpoints, notifications, and Qwen integration remain
-intentionally unimplemented.
+environment. Matching calculations, live-source adapters, durable worker implementations,
+automatic duplicate merging, derived text/embedding generation, application endpoints,
+notifications, and Qwen integration remain intentionally unimplemented.

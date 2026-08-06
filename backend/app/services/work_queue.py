@@ -17,6 +17,8 @@ class WorkQueue(Protocol):
         self, bucket: str, object_path: str, *, idempotency_key: str
     ) -> bool: ...
 
+    async def enqueue_ingestion_run(self, run_id: UUID, *, idempotency_key: str) -> bool: ...
+
 
 class InMemoryWorkQueue:
     """Development/test adapter. Production must inject a durable queue adapter."""
@@ -48,4 +50,8 @@ class InMemoryWorkQueue:
         self, bucket: str, object_path: str, *, idempotency_key: str
     ) -> bool:
         del bucket, object_path
+        return self._reserve(idempotency_key)
+
+    async def enqueue_ingestion_run(self, run_id: UUID, *, idempotency_key: str) -> bool:
+        del run_id
         return self._reserve(idempotency_key)

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import date, datetime
+from decimal import Decimal
 from typing import Any, Literal
 from uuid import UUID
 
@@ -67,6 +68,10 @@ class IngestionRunWrite:
     source_url: str | None
     dry_run: bool
     created_by: UUID
+    adapter_version: str = "unknown"
+    source_version: str | None = None
+    idempotency_key: str | None = None
+    batch_size: int = 100
     original_run_id: UUID | None = None
 
 
@@ -112,3 +117,54 @@ class DocumentWrite:
     mime_type: str
     size_bytes: int
     checksum_sha256: str
+
+
+@dataclass(frozen=True, slots=True)
+class ScholarshipWrite:
+    provider_name: str
+    provider_website_url: str | None
+    title: str
+    description: str | None
+    amount: Decimal | None
+    currency: str | None
+    funding_type: str
+    funding_summary: str | None
+    study_levels: list[str]
+    fields_of_study: list[str]
+    destination_countries: list[str]
+    nationality_requirements: list[str]
+    residency_requirements: list[str]
+    required_documents: list[str]
+    deadline: date | None
+    deadline_at: datetime | None
+    deadline_timezone: str | None
+    eligibility_summary: str | None
+    source_url: str
+    application_url: str | None
+    reviewer_notes: str | None
+    source_fingerprint: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RawSourceRecordWrite:
+    source: str
+    source_record_id: str
+    source_url: str
+    source_version: str
+    content_sha256: str
+    payload: dict[str, Any]
+    fetched_at: datetime
+    terms_checked_at: datetime
+    robots_allowed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class NormalizedSourceWrite:
+    scholarship: ScholarshipWrite
+    requirements: list[RequirementWrite]
+    source: str
+    source_record_id: str
+    source_version: str
+    canonical_url: str
+    fingerprint: str
+    trusted: bool

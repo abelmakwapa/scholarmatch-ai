@@ -25,6 +25,7 @@ class Capability(StrEnum):
 
 
 class ServicePurpose(StrEnum):
+    PUBLIC_CATALOG = "public_catalog"
     MATCH_WORKER = "match_worker"
     INGESTION_WORKER = "ingestion_worker"
     IDEMPOTENCY = "idempotency"
@@ -42,6 +43,7 @@ _USER_CAPABILITIES = frozenset(
 )
 
 _SERVICE_CAPABILITIES: dict[ServicePurpose, frozenset[Capability]] = {
+    ServicePurpose.PUBLIC_CATALOG: frozenset({Capability.CATALOG_READ}),
     ServicePurpose.MATCH_WORKER: frozenset(
         {
             Capability.PROFILE,

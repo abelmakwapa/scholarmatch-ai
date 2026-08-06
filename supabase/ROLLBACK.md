@@ -3,6 +3,23 @@
 Supabase migrations are forward-only in shared environments. Prefer a corrective migration over
 rewriting or deleting an applied migration. Take a database backup before any destructive rollback.
 
+## `20260806000400_catalog_ingestion_pipeline.sql`
+
+Prefer a forward repair after any ingestion run has started. Stop workers and export
+`ingestion_raw_records`, `scholarship_sources`, `scholarship_field_history`,
+`ingestion_quarantine`, and `ingestion_items`; their provenance cannot be reconstructed from the
+normalized catalog alone. Drop the immutable and `updated_at` triggers, then drop tables in order:
+
+1. `ingestion_items`, `ingestion_quarantine`, and `scholarship_field_history`.
+2. `scholarship_sources`, then `ingestion_raw_records`.
+
+Remove the ingestion-run indexes, columns, and expanded status constraint only after mapping every
+`partial` and `dead_lettered` row to an earlier terminal state. Remove
+`scholarships.source_fingerprint` and the provider canonical/search fields only if no later feature
+uses them. Restore the earlier study-level constraint only after mapping `secondary` and
+`vocational` records. Finally drop `private.reject_immutable_mutation()` if it is unused. Never
+delete raw or quarantined evidence merely to make a rollback succeed.
+
 ## `20260806000300_profile_documents_vertical_slice.sql`
 
 Prefer a forward repair. Before dropping the new profile columns, export values that must be

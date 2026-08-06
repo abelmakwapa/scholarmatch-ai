@@ -27,7 +27,9 @@ from app.core.logging import configure_logging
 from app.core.readiness import ReadinessCheck, default_readiness_checks, evaluate_readiness
 from app.db.protocols import Database
 from app.db.unit_of_work import PostgresDatabase
+from app.services.catalog import CatalogAdminService, CatalogService
 from app.services.documents import DocumentLimits, DocumentService
+from app.services.ingestion import IngestionAdminService
 from app.services.profile import ProfileService
 from app.services.storage import PrivateDocumentStorage, SupabasePrivateDocumentStorage
 from app.services.work_queue import InMemoryWorkQueue, WorkQueue
@@ -99,6 +101,13 @@ def create_app(
     application.state.profile_service = (
         ProfileService(database, queue) if database is not None else None
     )
+    application.state.catalog_service = CatalogService(database) if database is not None else None
+    application.state.catalog_admin_service = (
+        CatalogAdminService(database) if database is not None else None
+    )
+    application.state.ingestion_admin_service = (
+        IngestionAdminService(database, queue) if database is not None else None
+    )
     application.state.document_service = (
         DocumentService(
             database,
@@ -141,7 +150,7 @@ def create_app(
         allow_origins=config.cors_allowed_origins,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+        allow_headers=["Authorization", "Content-Type", "Idempotency-Key", "X-Request-ID"],
         expose_headers=["X-Request-ID"],
     )
 

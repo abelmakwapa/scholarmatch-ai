@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import replace
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import psycopg
 import pytest
@@ -12,6 +12,7 @@ from app.auth.models import ApplicationRole, CurrentUser
 from app.db.principal import DatabasePrincipal
 from app.db.unit_of_work import PostgresDatabase
 from app.repositories.models import ProfileWrite
+from app.services.ingestion import IngestionOrchestrator
 from psycopg import errors, sql
 from psycopg.rows import DictRow, dict_row
 
@@ -39,6 +40,19 @@ TABLES = {
     "ingestion_runs",
     "audit_events",
     "idempotency_keys",
+    "ingestion_raw_records",
+    "scholarship_sources",
+    "scholarship_field_history",
+    "ingestion_quarantine",
+    "ingestion_items",
+}
+
+FOUNDATION_TABLES = TABLES - {
+    "ingestion_raw_records",
+    "scholarship_sources",
+    "scholarship_field_history",
+    "ingestion_quarantine",
+    "ingestion_items",
 }
 
 EXPECTED_POLICIES = {
@@ -74,6 +88,17 @@ EXPECTED_POLICIES = {
     "scholarships_admin_insert",
     "scholarships_admin_update",
     "scholarships_catalog_select",
+    "scholarship_sources_catalog_select",
+    "scholarship_field_history_admin_select",
+    "ingestion_quarantine_admin_select",
+    "ingestion_items_admin_select",
+}
+
+AUTHORIZATION_POLICIES = EXPECTED_POLICIES - {
+    "scholarship_sources_catalog_select",
+    "scholarship_field_history_admin_select",
+    "ingestion_quarantine_admin_select",
+    "ingestion_items_admin_select",
 }
 
 
@@ -114,7 +139,7 @@ def test_migrations_apply_from_empty(isolated_database_url: str) -> None:
 
 
 def test_authorization_migration_applies_to_previous_state(isolated_database_url: str) -> None:
-    foundation, authorization, _ = MIGRATIONS
+    foundation, authorization, *_ = MIGRATIONS
     with psycopg.connect(isolated_database_url, autocommit=True) as connection:
         apply_sql_file(connection, BOOTSTRAP)
         apply_sql_file(connection, foundation)
@@ -125,14 +150,14 @@ def test_authorization_migration_applies_to_previous_state(isolated_database_url
     with psycopg.connect(isolated_database_url, autocommit=True) as connection:
         apply_sql_file(connection, authorization)
     _, rls_after, policies_after = _schema_state(isolated_database_url)
-    assert rls_after == TABLES
-    assert policies_after == EXPECTED_POLICIES
+    assert rls_after == FOUNDATION_TABLES
+    assert policies_after == AUTHORIZATION_POLICIES
 
 
 def test_profile_document_migration_applies_to_previous_state(
     isolated_database_url: str,
 ) -> None:
-    foundation, authorization, vertical_slice = MIGRATIONS
+    foundation, authorization, vertical_slice, _ = MIGRATIONS
     with psycopg.connect(isolated_database_url, autocommit=True) as connection:
         apply_sql_file(connection, BOOTSTRAP)
         apply_sql_file(connection, foundation)
@@ -146,6 +171,23 @@ def test_profile_document_migration_applies_to_previous_state(
             ).fetchall()
         }
     assert {"gpa_scale", "date_of_birth", "target_countries"} <= columns
+
+
+def test_catalog_ingestion_migration_applies_to_previous_state(
+    isolated_database_url: str,
+) -> None:
+    foundation, authorization, vertical_slice, catalog_ingestion = MIGRATIONS
+    with psycopg.connect(isolated_database_url, autocommit=True) as connection:
+        apply_sql_file(connection, BOOTSTRAP)
+        apply_sql_file(connection, foundation)
+        apply_sql_file(connection, authorization)
+        apply_sql_file(connection, vertical_slice)
+        apply_sql_file(connection, catalog_ingestion)
+
+    tables, rls_tables, policies = _schema_state(isolated_database_url)
+    assert tables == TABLES
+    assert rls_tables == TABLES
+    assert policies == EXPECTED_POLICIES
 
 
 def _seed(database_url: str) -> None:
@@ -162,8 +204,9 @@ def _seed(database_url: str) -> None:
             (OWNER_ID, OTHER_ID, ADMIN_ID),
         )
         connection.execute(
-            "insert into public.scholarship_providers (id, name) values "
-            "(%s, 'Published Provider'), (%s, 'Draft Provider')",
+            "insert into public.scholarship_providers (id, name, canonical_name) values "
+            "(%s, 'Published Provider', 'published provider'), "
+            "(%s, 'Draft Provider', 'draft provider')",
             (PUBLISHED_PROVIDER_ID, DRAFT_PROVIDER_ID),
         )
         connection.execute(
@@ -275,6 +318,10 @@ def test_rls_access_matrix(migrated_database_url: str) -> None:
         "notification_preferences": 1,
         "ingestion_runs": 0,
         "audit_events": 0,
+        "scholarship_sources": 0,
+        "scholarship_field_history": 0,
+        "ingestion_quarantine": 0,
+        "ingestion_items": 0,
     }
     for subject in (OWNER_ID, OTHER_ID):
         with _principal_connection(
@@ -286,6 +333,11 @@ def test_rls_access_matrix(migrated_database_url: str) -> None:
                 migrated_database_url, role="authenticated", subject=subject
             ) as user:
                 _count(user, "idempotency_keys")
+        with pytest.raises(errors.InsufficientPrivilege):
+            with _principal_connection(
+                migrated_database_url, role="authenticated", subject=subject
+            ) as user:
+                _count(user, "ingestion_raw_records")
 
     with _principal_connection(
         migrated_database_url,
@@ -303,6 +355,10 @@ def test_rls_access_matrix(migrated_database_url: str) -> None:
         assert _count(administrator, "scholarship_requirements") == 2
         assert _count(administrator, "ingestion_runs") == 1
         assert _count(administrator, "audit_events") == 1
+        assert _count(administrator, "scholarship_sources") == 0
+        assert _count(administrator, "scholarship_field_history") == 0
+        assert _count(administrator, "ingestion_quarantine") == 0
+        assert _count(administrator, "ingestion_items") == 0
     with pytest.raises(errors.InsufficientPrivilege):
         with _principal_connection(
             migrated_database_url,
@@ -311,6 +367,14 @@ def test_rls_access_matrix(migrated_database_url: str) -> None:
             application_role="admin",
         ) as administrator:
             _count(administrator, "idempotency_keys")
+    with pytest.raises(errors.InsufficientPrivilege):
+        with _principal_connection(
+            migrated_database_url,
+            role="authenticated",
+            subject=ADMIN_ID,
+            application_role="admin",
+        ) as administrator:
+            _count(administrator, "ingestion_raw_records")
 
     with _principal_connection(migrated_database_url, role="service_role") as service:
         assert {table: _count(service, table) for table in TABLES} == {
@@ -325,6 +389,11 @@ def test_rls_access_matrix(migrated_database_url: str) -> None:
             "ingestion_runs": 1,
             "audit_events": 1,
             "idempotency_keys": 1,
+            "ingestion_raw_records": 0,
+            "scholarship_sources": 0,
+            "scholarship_field_history": 0,
+            "ingestion_quarantine": 0,
+            "ingestion_items": 0,
         }
 
 
@@ -366,7 +435,8 @@ def test_rls_owner_mutations_admin_minimum_access_and_append_only_audit(
     ) as administrator:
         assert (
             administrator.execute(
-                "insert into public.scholarship_providers (name) values ('Admin Provider')"
+                "insert into public.scholarship_providers (name, canonical_name) "
+                "values ('Admin Provider', 'admin provider')"
             ).rowcount
             == 1
         )
@@ -415,6 +485,8 @@ def test_known_query_indexes_exist(migrated_database_url: str) -> None:
         "scholarships_status_currency_amount_idx",
         "scholarships_status_funding_type_idx",
         "scholarships_search_idx",
+        "scholarships_status_published_idx",
+        "scholarships_status_title_idx",
         "matches_profile_score_idx",
         "applications_profile_created_idx",
         "applications_profile_deadline_idx",
@@ -423,6 +495,12 @@ def test_known_query_indexes_exist(migrated_database_url: str) -> None:
         "ingestion_runs_status_created_idx",
         "audit_events_target_idx",
         "idempotency_keys_expires_idx",
+        "ingestion_runs_source_idempotency_key",
+        "ingestion_runs_one_active_source_idx",
+        "ingestion_raw_records_run_idx",
+        "scholarship_sources_fingerprint_idx",
+        "ingestion_quarantine_run_idx",
+        "ingestion_items_claim_idx",
     }
     with psycopg.connect(migrated_database_url) as connection:
         actual = {
@@ -432,6 +510,100 @@ def test_known_query_indexes_exist(migrated_database_url: str) -> None:
             ).fetchall()
         }
     assert expected <= actual
+
+
+def test_catalog_query_plans_use_known_shape_indexes(migrated_database_url: str) -> None:
+    queries = {
+        "scholarships_status_deadline_idx": (
+            "select id from public.scholarships where status = 'published' "
+            "order by deadline nulls last, id limit 20"
+        ),
+        "scholarships_status_currency_amount_idx": (
+            "select id from public.scholarships where status = 'published' "
+            "and currency = 'USD' order by amount desc nulls last, id limit 20"
+        ),
+        "scholarships_status_published_idx": (
+            "select id from public.scholarships where status = 'published' "
+            "order by published_at desc nulls last, id desc limit 20"
+        ),
+        "scholarships_status_title_idx": (
+            "select id from public.scholarships where status = 'published' "
+            "order by lower(title), id limit 20"
+        ),
+        "scholarships_search_idx": (
+            "select id from public.scholarships where "
+            "to_tsvector('simple', coalesce(title, '') || ' ' || "
+            "coalesce(description, '') || ' ' || coalesce(funding_summary, '')) "
+            "@@ plainto_tsquery('simple', 'science')"
+        ),
+        "scholarships_study_levels_idx": (
+            "select id from public.scholarships "
+            "where study_levels @> array['undergraduate']::text[]"
+        ),
+    }
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute("set enable_seqscan = off")
+        for index_name, query in queries.items():
+            plan_rows = connection.execute(f"explain (format json) {query}").fetchall()
+            assert index_name in json.dumps(plan_rows), query
+
+
+def test_fixture_ingestion_repository_round_trip(migrated_database_url: str) -> None:
+    baseline_run = uuid4()
+    changed_run = uuid4()
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            """
+            insert into public.ingestion_runs (
+              id, source, adapter_version, source_version, idempotency_key, batch_size
+            ) values (%s, 'fixture', '1.0.0', 'baseline', 'integration-baseline', 100)
+            """,
+            (baseline_run,),
+        )
+
+    async def execute(run_id: UUID) -> Any:
+        database = PostgresDatabase(migrated_database_url, min_size=1, max_size=2)
+        orchestrator = IngestionOrchestrator(database)
+        await database.open()
+        try:
+            return await orchestrator.run_fixture_batch(run_id)
+        finally:
+            await database.close()
+
+    baseline = asyncio.run(execute(baseline_run))
+    assert baseline.status == "completed"
+    assert baseline.counters["created"] == 2
+
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            """
+            insert into public.ingestion_runs (
+              id, source, adapter_version, source_version, idempotency_key, batch_size
+            ) values (%s, 'fixture', '1.0.0', 'changed', 'integration-changed', 100)
+            """,
+            (changed_run,),
+        )
+    changed = asyncio.run(execute(changed_run))
+    assert changed.status == "completed"
+    with psycopg.connect(migrated_database_url) as connection:
+        changed_fields = connection.execute(
+            "select field_name from public.scholarship_field_history order by field_name"
+        ).fetchall()
+    assert changed.counters["updated"] == 1, changed_fields
+    assert changed.counters["unchanged"] == 1
+
+    with psycopg.connect(migrated_database_url) as connection:
+        counts = connection.execute(
+            """
+            select
+              (select count(*) from public.ingestion_raw_records) as raw_count,
+              (select count(*) from public.scholarship_sources) as source_count,
+              (select count(*) from public.scholarships where status = 'published') as published,
+              (select count(*) from public.scholarship_field_history) as history_count,
+              (select count(*) from public.ingestion_items where status = 'completed') as completed
+            """
+        ).fetchone()
+    assert counts == (4, 2, 0, 2, 4)
 
 
 def test_unit_of_work_commits_and_rolls_back_multi_table_mutations(

@@ -45,6 +45,11 @@ def test_openapi_is_available_only_in_development() -> None:
     assert production.get("/redoc").status_code == 404
     assert production.get("/openapi.json").status_code == 404
 
+    schemas = development.get("/openapi.json").json()["components"]["schemas"]
+    assert schemas["ScholarshipResponse"]["examples"]
+    assert schemas["AdminScholarshipWrite"]["examples"]
+    assert schemas["IngestionRunCreate"]["examples"]
+
 
 def test_readiness_reports_ready_dependencies() -> None:
     async def ready() -> bool:
@@ -90,6 +95,7 @@ def test_cors_preflight_allows_only_configured_origin() -> None:
     client = TestClient(create_app(settings=make_settings()))
     headers = {
         "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "Authorization, Idempotency-Key",
         "Origin": "http://localhost:3000",
     }
 
@@ -98,6 +104,7 @@ def test_cors_preflight_allows_only_configured_origin() -> None:
 
     assert allowed.status_code == 200
     assert allowed.headers["access-control-allow-origin"] == "http://localhost:3000"
+    assert "Idempotency-Key" in allowed.headers["access-control-allow-headers"]
     assert denied.status_code == 400
     assert denied.json()["error"]["code"] == "CORS_REJECTED"
     assert denied.json()["error"]["request_id"] == denied.headers["X-Request-ID"]
