@@ -7,6 +7,8 @@ import {
   sessionDisplayName,
 } from "@/app/lib/auth/server-session";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Request-time private shell. Proxy avoids obvious flashes, while this secure
  * server lookup remains the actual UI gate for every route in the group.

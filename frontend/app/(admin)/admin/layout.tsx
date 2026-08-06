@@ -8,6 +8,8 @@ import {
   sessionDisplayName,
 } from "@/app/lib/auth/server-session";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: {
     default: "Administration | ScholarMatch AI",
