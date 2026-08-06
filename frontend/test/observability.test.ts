@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   observabilityPolicy,
   reportClientFault,
+  reportMarketingCta,
   reportWebVital,
 } from "@/app/lib/observability/client";
 
@@ -70,6 +71,42 @@ describe("privacy-safe observability", () => {
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response(null, { status: 202 }));
     reportClientFault("window_error");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("records only an allowlisted CTA identifier and destination path", () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(null, { status: 202 }));
+
+    reportMarketingCta(
+      "closing_create_profile",
+      "/sign-up?next=/onboarding#profile",
+    );
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(JSON.parse(String(init?.body))).toEqual({
+      schema_version: 1,
+      event: "marketing_cta",
+      cta_id: "closing_create_profile",
+      route: "/sign-up",
+    });
+  });
+
+  test("refuses unknown CTA identifiers and cross-origin destinations", () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(null, { status: 202 }));
+
+    reportMarketingCta(
+      "profile_answer" as never,
+      "/matches?scholarship=private",
+    );
+    reportMarketingCta(
+      "closing_view_matches",
+      "https://tracking.example.test/matches",
+    );
+
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

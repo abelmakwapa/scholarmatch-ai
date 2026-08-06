@@ -148,12 +148,15 @@ export const features = [
   },
 ] as const;
 
-export type StudentStory = {
+export type ApprovedStudentStory = {
+  approval: "approved";
   id: string;
   quote: string;
-  name: string;
-  context: string;
+  attribution: {
+    displayName: string;
+    context: string;
+  };
 };
 
 // Production intentionally ships without unapproved testimonials.
-export const approvedStudentStories: StudentStory[] = [];
+export const approvedStudentStories: readonly ApprovedStudentStory[] = [];

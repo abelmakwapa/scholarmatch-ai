@@ -3,6 +3,7 @@ import { MarketingPagePresence } from "./components/marketing/marketing-page-pre
 import { Navigation } from "./components/marketing/navigation";
 import { StoryMotionLoader } from "./components/marketing/motion/story-motion-loader";
 import { ProductStoryEnhancerLoader } from "./components/marketing/product-story-loader";
+import { CategoryRibbon } from "./components/marketing/category-ribbon";
 import { getOptionalAuthenticatedSession } from "./lib/auth/server-session";
 import {
   ClosingSection,
@@ -12,8 +13,12 @@ import {
   MatchAnatomySection,
   OpportunityExplorerSection,
   ReadinessSection,
+  ResourcesSection,
+  StudentStoriesSection,
   UseCasesSection,
 } from "./components/marketing/sections";
+
+import "./components/marketing/lower-home.css";
 
 export default async function Home() {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
@@ -43,8 +48,11 @@ export default async function Home() {
           <OpportunityExplorerSection />
           <ReadinessSection />
           <UseCasesSection />
+          <CategoryRibbon />
+          <ResourcesSection />
           <FaqSection />
-          <ClosingSection />
+          <StudentStoriesSection />
+          <ClosingSection authenticated={Boolean(session)} />
           <StoryMotionLoader />
           <ProductStoryEnhancerLoader />
         </main>

@@ -1,8 +1,16 @@
-import { Clock3, FileText, LockKeyhole, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  Clock3,
+  FileText,
+  LockKeyhole,
+  ShieldCheck,
+} from "lucide-react";
 import Link from "next/link";
 
+import type { MarketingCtaId } from "@/app/lib/observability/client";
+
 import { ButtonLink } from "./button-link";
-import { useCases } from "./data";
+import { approvedStudentStories, useCases } from "./data";
 import { HeroMatcher } from "./hero-matcher";
 import { MatchingWorkspace } from "./matching-workspace";
 import {
@@ -12,6 +20,36 @@ import {
   readinessItems,
 } from "./product-story-data";
 import { SectionHeading } from "./section-heading";
+import { illustrativeJourneys } from "./story-data";
+import { StudentStoriesLoader } from "./student-stories-loader";
+import { TrackedLink } from "./tracked-link";
+
+function ContextualCta({
+  description,
+  href,
+  label,
+  title,
+  trackingId,
+}: {
+  description: string;
+  href: string;
+  label: string;
+  title: string;
+  trackingId: MarketingCtaId;
+}) {
+  return (
+    <aside className="contextual-cta">
+      <div>
+        <h3>{title}</h3>
+        <p>{description}</p>
+      </div>
+      <TrackedLink href={href} trackingId={trackingId}>
+        {label}
+        <ArrowRight aria-hidden="true" size={18} />
+      </TrackedLink>
+    </aside>
+  );
+}
 
 export function HeroSection({
   authenticated = false,
@@ -78,6 +116,13 @@ export function HowItWorksSection() {
           This example demonstrates the workflow. Eligibility and deadlines must
           still be confirmed with the official scholarship provider.
         </p>
+        <ContextualCta
+          description="Follow each input from profile fact to eligibility result, ranking signal, explanation, and student review."
+          href="/how-it-works"
+          label="Read the matching walkthrough"
+          title="Want the complete decision sequence?"
+          trackingId="how_it_works_details"
+        />
       </div>
     </section>
   );
@@ -101,6 +146,13 @@ export function MatchAnatomySection() {
           }
         />
         <MatchAnatomyStatic />
+        <ContextualCta
+          description="Learn what nationality, residency, academic thresholds, funding coverage, and closing dates mean in practice."
+          href="/resources/eligibility-glossary"
+          label="Open the eligibility glossary"
+          title="Decode the rules behind a result."
+          trackingId="match_anatomy_glossary"
+        />
       </div>
     </section>
   );
@@ -192,6 +244,126 @@ export function FaqSection() {
           }
         />
         <FaqStatic />
+        <ContextualCta
+          description="Explore the full set of product, data quality, matching, AI, privacy, accessibility, and support answers."
+          href="/faq"
+          label="Read every FAQ"
+          title="Have a question beyond the shortlist?"
+          trackingId="faq_all_questions"
+        />
+      </div>
+    </section>
+  );
+}
+
+const resourceCards = [
+  {
+    eyebrow: "From discovery to submission",
+    title: "Scholarship guide",
+    description:
+      "A practical route through source checking, shortlisting, preparation, review, and submission.",
+    href: "/resources/scholarship-guide",
+    label: "Read the guide",
+  },
+  {
+    eyebrow: "Plan locally",
+    title: "Application checklist",
+    description:
+      "Work through evidence, essays, references, transcripts, and deadline planning without implying anything was submitted.",
+    href: "/resources/application-checklist",
+    label: "Open the checklist",
+  },
+  {
+    eyebrow: "Plain-language rules",
+    title: "Eligibility glossary",
+    description:
+      "Understand the terms that commonly decide whether an opportunity should stay in your shortlist.",
+    href: "/resources/eligibility-glossary",
+    label: "Browse definitions",
+  },
+] as const;
+
+export function ResourcesSection() {
+  return (
+    <section
+      aria-labelledby="resources-heading"
+      className="home-resources-section"
+      id="resources"
+    >
+      <div className="section-shell">
+        <SectionHeading
+          align="center"
+          description="Use the next step that matches where you are: learning the process, organising an application, or interpreting eligibility language."
+          eyebrow="Practical resources"
+          title={
+            <>
+              Turn a shortlist into <em>informed action.</em>
+            </>
+          }
+        />
+        <div className="home-resources-grid">
+          {resourceCards.map((resource, index) => (
+            <article className="home-resource-card" key={resource.href}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <p className="eyebrow">{resource.eyebrow}</p>
+              <h3>{resource.title}</h3>
+              <p>{resource.description}</p>
+              <Link href={resource.href}>
+                {resource.label}
+                <ArrowRight aria-hidden="true" size={17} />
+              </Link>
+            </article>
+          ))}
+        </div>
+        <ContextualCta
+          description="Begin with a calm, end-to-end guide, then return to the tools that fit your stage."
+          href="/resources/scholarship-guide"
+          label="Start with the scholarship guide"
+          title="Not sure which resource comes first?"
+          trackingId="resources_guide"
+        />
+      </div>
+    </section>
+  );
+}
+
+export function StudentStoriesSection() {
+  const hasApprovedStories = approvedStudentStories.length > 0;
+
+  return (
+    <section
+      aria-labelledby="stories-heading"
+      className="student-stories-section"
+      id="stories"
+    >
+      <div className="section-shell">
+        <SectionHeading
+          description={
+            hasApprovedStories
+              ? "Reviewed accounts showing how students used ScholarMatch, presented without turning individual experiences into promises."
+              : "Illustrative scenarios—not testimonials—showing how different students could use the workflow. No person, institution, award, or outcome is represented."
+          }
+          eyebrow={
+            hasApprovedStories ? "Approved student stories" : "Example journeys"
+          }
+          inverse
+          title={
+            <>
+              See the decisions around <em>a possible match.</em>
+            </>
+          }
+        />
+        <StudentStoriesLoader
+          approvedStories={approvedStudentStories}
+          exampleJourneys={illustrativeJourneys}
+        />
+        <ContextualCta
+          description="Compare the facts and questions that matter for undergraduate, postgraduate, international, STEM, research, and community paths."
+          href="#use-cases"
+          label="Compare student pathways"
+          title="Find the journey closest to your plans."
+          trackingId="stories_student_paths"
+        />
       </div>
     </section>
   );
@@ -507,7 +679,34 @@ function UseCasesStatic() {
   );
 }
 
-export function ClosingSection() {
+export function ClosingSection({
+  authenticated = false,
+}: {
+  authenticated?: boolean;
+}) {
+  const primaryAction = authenticated
+    ? {
+        href: "/matches",
+        label: "View my matches",
+        trackingId: "closing_view_matches" as const,
+      }
+    : {
+        href: "/sign-up?next=/onboarding",
+        label: "Create my profile",
+        trackingId: "closing_create_profile" as const,
+      };
+  const secondaryAction = authenticated
+    ? {
+        href: "/dashboard",
+        label: "Return to dashboard",
+        trackingId: "closing_dashboard" as const,
+      }
+    : {
+        href: "/sign-in",
+        label: "Sign in",
+        trackingId: "closing_sign_in" as const,
+      };
+
   return (
     <section
       aria-labelledby="closing-heading"
@@ -529,15 +728,24 @@ export function ClosingSection() {
           <em> could already fit.</em>
         </h2>
         <p>
-          Bring your goals and the facts you know. ScholarMatch will help
-          organize the questions that matter before you invest in an
-          application.
+          {authenticated
+            ? "Return to your workspace to review ranked matches, visible eligibility reasons, and the questions that still need confirmation."
+            : "Bring your goals and the facts you know. ScholarMatch will help organise the questions that matter before you invest in an application."}
         </p>
         <div className="closing-section__actions">
-          <ButtonLink href="/sign-up?next=/onboarding" tone="ink">
-            Create my profile
-          </ButtonLink>
-          <a href="#page-top">Back to the top</a>
+          <TrackedLink
+            className="button-link button-link--ink"
+            href={primaryAction.href}
+            trackingId={primaryAction.trackingId}
+          >
+            {primaryAction.label}
+          </TrackedLink>
+          <TrackedLink
+            href={secondaryAction.href}
+            trackingId={secondaryAction.trackingId}
+          >
+            {secondaryAction.label}
+          </TrackedLink>
         </div>
         <div className="closing-section__trust">
           <span>

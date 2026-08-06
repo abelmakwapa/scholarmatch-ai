@@ -320,6 +320,109 @@ test("product story controls teach a workflow without pretending to submit", asy
   );
 });
 
+test("proof categories and illustrative journeys remain directly operable", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/#browse-categories");
+
+  const ribbon = page.locator("#browse-categories");
+  for (const label of [
+    "Fully funded",
+    "Tuition support",
+    "Research",
+    "STEM",
+    "Leadership",
+    "Community",
+    "Postgraduate",
+    "International study",
+  ]) {
+    await expect(ribbon.getByRole("link", { name: label })).toHaveAttribute(
+      "href",
+      /^\/.+/,
+    );
+  }
+  const ribbonViewport = ribbon.locator(".category-ribbon__viewport");
+  await ribbonViewport.scrollIntoViewIfNeeded();
+  const ribbonBounds = await ribbonViewport.boundingBox();
+  expect(ribbonBounds).not.toBeNull();
+  await page.mouse.move(
+    ribbonBounds!.x + ribbonBounds!.width / 2,
+    ribbonBounds!.y + ribbonBounds!.height / 2,
+  );
+  await expect(ribbon).toHaveAttribute("data-paused", "true");
+
+  const stories = page.locator("#stories");
+  await stories.scrollIntoViewIfNeeded();
+  await expect(
+    stories.getByText("Illustrative scenario", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    stories.getByText("No person or outcome represented"),
+  ).toBeVisible();
+
+  await stories.getByRole("button", { name: "Next journey" }).click();
+  await expect(
+    stories.getByRole("heading", {
+      name: "Turning a promising match into an evidence plan",
+    }),
+  ).toBeVisible();
+
+  const viewport = stories.getByRole("group", {
+    name: /Illustrative example journeys/,
+  });
+  await viewport.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(
+    stories.getByRole("heading", {
+      name: "Keeping location uncertainty visible",
+    }),
+  ).toBeVisible();
+
+  await stories
+    .getByRole("button", {
+      name: /Show slide 1: From a broad search to a reviewable shortlist/,
+    })
+    .click();
+  await expect(
+    stories.getByRole("heading", {
+      name: "From a broad search to a reviewable shortlist",
+    }),
+  ).toBeVisible();
+
+  if (!testInfo.project.use.isMobile) {
+    const bounds = await viewport.boundingBox();
+    expect(bounds).not.toBeNull();
+    await page.mouse.move(bounds!.x + bounds!.width * 0.8, bounds!.y + 120);
+    await page.mouse.down();
+    await page.mouse.move(bounds!.x + bounds!.width * 0.2, bounds!.y + 120, {
+      steps: 8,
+    });
+    await page.mouse.up();
+    await expect(
+      stories.getByRole("heading", {
+        name: "Turning a promising match into an evidence plan",
+      }),
+    ).toBeVisible();
+  }
+});
+
+test("lower homepage proof does not create horizontal overflow", async ({
+  page,
+}) => {
+  for (const width of [320, 768, 1440]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/#stories");
+    await page.locator("#stories").scrollIntoViewIfNeeded();
+
+    const dimensions = await page.evaluate(() => ({
+      client: document.documentElement.clientWidth,
+      scroll: document.documentElement.scrollWidth,
+    }));
+    expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client);
+    await expect(page.locator("#stories")).toBeInViewport();
+  }
+});
+
 test("reduced motion keeps all marketing content available", async ({
   page,
 }) => {
@@ -347,6 +450,17 @@ test("reduced motion keeps all marketing content available", async ({
       name: "Your next opportunity could already fit.",
     }),
   ).toBeVisible();
+  await expect(page.locator("#browse-categories")).toHaveAttribute(
+    "data-paused",
+    "true",
+  );
+  await expect(page.locator(".stories-carousel")).toHaveAttribute(
+    "data-autoplay",
+    "paused",
+  );
+  await expect(
+    page.getByRole("button", { name: "Play automatic advance" }),
+  ).toBeDisabled();
 });
 
 test("forced colors preserves visible controls and focus", async ({ page }) => {

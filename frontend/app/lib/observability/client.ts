@@ -1,6 +1,29 @@
 const WEB_VITAL_NAMES = new Set(["CLS", "FCP", "FID", "INP", "LCP", "TTFB"]);
 const RATINGS = new Set(["good", "needs-improvement", "poor"]);
 
+export type MarketingCtaId =
+  | "closing_create_profile"
+  | "closing_dashboard"
+  | "closing_sign_in"
+  | "closing_view_matches"
+  | "faq_all_questions"
+  | "how_it_works_details"
+  | "match_anatomy_glossary"
+  | "resources_guide"
+  | "stories_student_paths";
+
+const MARKETING_CTA_IDS = new Set<MarketingCtaId>([
+  "closing_create_profile",
+  "closing_dashboard",
+  "closing_sign_in",
+  "closing_view_matches",
+  "faq_all_questions",
+  "how_it_works_details",
+  "match_anatomy_glossary",
+  "resources_guide",
+  "stories_student_paths",
+]);
+
 export type RouteGroup =
   | "marketing"
   | "auth"
@@ -20,6 +43,11 @@ type OperationalEvent =
       event: "client_fault";
       source: "error_boundary" | "window_error" | "unhandled_rejection";
       route_group: RouteGroup;
+    }
+  | {
+      event: "marketing_cta";
+      cta_id: MarketingCtaId;
+      route: string;
     };
 
 function routeGroup(pathname: string): RouteGroup {
@@ -102,13 +130,40 @@ export function reportClientFault(
   });
 }
 
+export function reportMarketingCta(
+  ctaId: MarketingCtaId,
+  destination: string,
+): void {
+  if (!MARKETING_CTA_IDS.has(ctaId)) return;
+
+  let destinationUrl: URL;
+  try {
+    destinationUrl = new URL(destination, window.location.origin);
+  } catch {
+    return;
+  }
+  if (destinationUrl.origin !== window.location.origin) return;
+
+  send({
+    event: "marketing_cta",
+    cta_id: ctaId,
+    route: destinationUrl.pathname,
+  });
+}
+
 export const observabilityPolicy = {
-  allowedEvents: ["web_vital", "client_fault"] as const,
+  allowedEvents: ["web_vital", "client_fault", "marketing_cta"] as const,
+  allowedMarketingCtaIds: [...MARKETING_CTA_IDS],
   prohibitedFields: [
     "profile_answers",
+    "profile_facts",
     "document_name",
     "document_content",
+    "document_details",
     "query_text",
+    "search_terms",
+    "scholarship_name",
+    "form_contents",
     "token",
     "ai_explanation",
     "error_message",

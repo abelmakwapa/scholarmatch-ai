@@ -2,14 +2,14 @@
   "buildAssets": {
     "totalJsBytes": 1700000,
     "maxJsChunkBytes": 270000,
-    "totalCssBytes": 120000,
+    "totalCssBytes": 130000,
     "totalFontBytes": 300000
   },
   "routes": {
     "/": {
       "manifest": ".next/server/app/page_client-reference-manifest.js",
       "jsBytes": 255000,
-      "cssBytes": 112000
+      "cssBytes": 122000
     },
     "/sign-in": {
       "manifest": ".next/server/app/(auth)/sign-in/page_client-reference-manifest.js",

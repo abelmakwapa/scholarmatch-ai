@@ -4,8 +4,9 @@ import { useGSAP } from "@gsap/react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// This module is only imported through `ssr: false` client loaders. Module
-// evaluation is therefore the single registration point for both plugins.
+// Client components reach this module only through `ssr: false` loaders or a
+// post-mount dynamic import. Module evaluation remains the single registration
+// point for both plugins and never runs during server rendering.
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
 export { gsap, ScrollTrigger, useGSAP };
