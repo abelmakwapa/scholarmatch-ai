@@ -12,6 +12,11 @@ class AccessTokenVerifier(Protocol):
 
 
 async def get_current_user(request: Request) -> CurrentUser:
+    # Check for demo mode first (development only)
+    demo_user = getattr(request.state, "demo_user", None)
+    if demo_user is not None and getattr(request.app.state, "demo_mode_active", False):
+        return demo_user
+    
     authorization = request.headers.get("Authorization", "")
     scheme, separator, token = authorization.partition(" ")
     if separator != " " or scheme.lower() != "bearer" or not token.strip():
@@ -40,6 +45,14 @@ def require_role(
 
     async def dependency(request: Request) -> CurrentUser:
         user = await get_current_user(request)
+        # In demo mode, also check for demo admin user
+        demo_admin_user = getattr(request.state, "demo_admin_user", None)
+        if (
+            demo_admin_user is not None
+            and getattr(request.app.state, "demo_mode_active", False)
+            and ApplicationRole.ADMIN in allowed
+        ):
+            return demo_admin_user
         if user.role not in allowed:
             raise ApiError(
                 status_code=403,

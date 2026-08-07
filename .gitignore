@@ -9,29 +9,31 @@ env/
 venv/
 .venv/
 .ENV
-.ENV.*
-.venv.bak/
-.venv*/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
+.ENV.local
+.env
+.env.local
+.env.*
+.pytest_cache/
+.mypy_cache/
 .coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
+htmlcov/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Logs
 *.log
-*.pot
-*.pyc
-*.pyo
-*.pyd
-.MF
-.tags*
-test.em
-test.py
-test.pyc
-test.pyo
+
+# OS generated files
 .DS_Store
 Thumbs.db
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
 ```
