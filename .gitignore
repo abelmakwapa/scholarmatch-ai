@@ -1,76 +1,39 @@
-# Environment files (contain secrets)
-.env
-.env.local
-.env.*.local
-
+```
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
 env/
-ENV/
-.venv
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-.project
-.pydevproject
-.settings/
-
-# Testing
+venv/
+.venv/
+.ENV
+.ENV.local
+.env
+.env.local
+.env.*
 .pytest_cache/
+.mypy_cache/
 .coverage
 htmlcov/
-.tox/
-.nox/
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
 
 # Logs
 *.log
-logs/
 
-# OS
+# OS generated files
 .DS_Store
 Thumbs.db
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Secrets
-*.pem
-*.key
-secrets/
-
-# Local development
-*.local.yaml
-*.local.yml
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+```
