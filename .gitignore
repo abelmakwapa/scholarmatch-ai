@@ -1,37 +1,76 @@
-```
+# Environment files (contain secrets)
+.env
+.env.local
+.env.*.local
+
 # Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
-env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
 venv/
-.venv/
-.ENV
-.ENV.*
-.venv.bak/
-.venv*/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
+env/
+ENV/
+.venv
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Testing
+.pytest_cache/
 .coverage
-.coverage.*
-.cache
-nosetests.xml
+htmlcov/
+.tox/
+.nox/
 coverage.xml
 *.cover
+*.py,cover
+.hypothesis/
+
+# Logs
 *.log
-*.pot
-*.pyc
-*.pyo
-*.pyd
-.MF
-.tags*
-test.em
-test.py
-test.pyc
-test.pyo
+logs/
+
+# OS
 .DS_Store
 Thumbs.db
-```
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+*.pem
+*.key
+secrets/
+
+# Local development
+*.local.yaml
+*.local.yml
