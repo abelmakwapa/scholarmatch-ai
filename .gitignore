@@ -1,60 +1,37 @@
 ```
 # Python
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
+*.pyc
+*.pyo
+*.pyd
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Virtual Environment
-venv/
-ENV/
 env/
+venv/
 .venv/
-.env/
-
-# Testing
+.ENV
+.ENV.*
+.venv.bak/
+.venv*/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
 .coverage
-coverage/
-htmlcov/
-.nosetests
-.unit_test_results/
-
-# Celery
-celerybeat-schedule
-celerybeat.pid
-
-# Environment variables
-.env
-.env.local
-.env.*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
-
-# Logs
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
 *.log
-
-# OS
+*.pot
+*.pyc
+*.pyo
+*.pyd
+.MF
+.tags*
+test.em
+test.py
+test.pyc
+test.pyo
 .DS_Store
 Thumbs.db
 ```
